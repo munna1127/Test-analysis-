@@ -288,6 +288,319 @@ new Chart(
 )
 
     }
+/* ===========================
+PART 3 — ACCURACY ANALYTICS
+=========================== */
+
+function generateAccuracyGraph(data){
+
+let correct = data.correct || 0
+let incorrect = data.incorrect || 0
+let attempted = data.attempted || 0
+let total = data.responses ? data.responses.length : 0
+
+let unattempted = total - attempted
+
+let accuracy = attempted ? Math.round(correct/attempted*100) : 0
+
+
+let html = `
+<div class="section">
+
+    <h2>Accuracy Analysis</h2>
+
+    <table>
+
+        <tr>
+            <th>Total Questions</th>
+            <th>Attempted</th>
+            <th>Correct</th>
+            <th>Incorrect</th>
+            <th>Unattempted</th>
+            <th>Accuracy</th>
+        </tr>
+
+        <tr>
+            <td>${total}</td>
+            <td>${attempted}</td>
+            <td>${correct}</td>
+            <td>${incorrect}</td>
+            <td>${unattempted}</td>
+            <td>${accuracy}%</td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <canvas id="accuracyPie"></canvas>
+
+</div>
+`
+
+document.getElementById("accuracyGraph").innerHTML = html
+
+
+new Chart(
+
+    document.getElementById("accuracyPie"),
+
+    {
+        type:"pie",
+        data:{
+            labels:["Correct","Incorrect","Unattempted"],
+            datasets:[{
+                data:[correct,incorrect,unattempted]
+            }]
+        }
+    }
+
+)
+
+  } 
+/* ===========================
+PART 4 — DIFFICULTY ANALYSIS
+=========================== */
+
+function generateDifficultyAnalysis(data){
+
+let difficulty = {
+    Easy:{total:0,correct:0},
+    Moderate:{total:0,correct:0},
+    Hard:{total:0,correct:0}
+}
+
+if(data.responses){
+
+    data.responses.forEach(r=>{
+
+        if(!r) return
+
+        let d = r.difficulty || "Easy"
+
+        difficulty[d].total++
+
+        if(r.selected == r.correct){
+            difficulty[d].correct++
+        }
+
+    })
+
+}
+
+let easyAcc = difficulty.Easy.total ?
+    Math.round(difficulty.Easy.correct / difficulty.Easy.total * 100) : 0
+
+let modAcc = difficulty.Moderate.total ?
+    Math.round(difficulty.Moderate.correct / difficulty.Moderate.total * 100) : 0
+
+let hardAcc = difficulty.Hard.total ?
+    Math.round(difficulty.Hard.correct / difficulty.Hard.total * 100) : 0
+
+
+let html = `
+<div class="section">
+
+    <h2>Difficulty Analysis</h2>
+
+    <table>
+
+        <tr>
+            <th>Difficulty</th>
+            <th>Total Questions</th>
+            <th>Correct</th>
+            <th>Accuracy</th>
+        </tr>
+
+        <tr>
+            <td>Easy</td>
+            <td>${difficulty.Easy.total}</td>
+            <td>${difficulty.Easy.correct}</td>
+            <td>${easyAcc}%</td>
+        </tr>
+
+        <tr>
+            <td>Moderate</td>
+            <td>${difficulty.Moderate.total}</td>
+            <td>${difficulty.Moderate.correct}</td>
+            <td>${modAcc}%</td>
+        </tr>
+
+        <tr>
+            <td>Hard</td>
+            <td>${difficulty.Hard.total}</td>
+            <td>${difficulty.Hard.correct}</td>
+            <td>${hardAcc}%</td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <canvas id="difficultyChart"></canvas>
+
+</div>
+`
+
+document.getElementById("difficultyAnalysis").innerHTML = html
+
+
+new Chart(
+
+    document.getElementById("difficultyChart"),
+
+    {
+        type:"bar",
+        data:{
+            labels:["Easy","Moderate","Hard"],
+            datasets:[{
+                label:"Correct Questions",
+                data:[
+                    difficulty.Easy.correct,
+                    difficulty.Moderate.correct,
+                    difficulty.Hard.correct
+                ]
+            }]
+        }
+    }
+
+)
+
+      }  
+/* ===========================
+PART 5 — TIME PER QUESTION
+=========================== */
+
+function generateTimePerQuestion(data){
+
+let timeData = []
+let labels = []
+let totalTime = 0
+let count = 0
+
+if(data.responses){
+
+    data.responses.forEach((r,i)=>{
+
+        if(!r) return
+
+        let t = r.time || 0
+
+        timeData.push(t)
+        labels.push("Q"+(i+1))
+
+        totalTime += t
+        count++
+
+    })
+
+}
+
+let avgTime = count ? Math.round(totalTime/count) : 0
+
+let html = `
+<div class="section">
+
+    <h2>Time Per Question</h2>
+
+    <div class="card">
+        Average Time
+        <div class="big">${avgTime}s</div>
+    </div>
+
+    <br>
+
+    <canvas id="timeChart"></canvas>
+
+</div>
+`
+
+document.getElementById("timePerQuestion").innerHTML = html
+
+
+new Chart(
+
+    document.getElementById("timeChart"),
+
+    {
+        type:"line",
+        data:{
+            labels:labels,
+            datasets:[{
+                label:"Time (seconds)",
+                data:timeData
+            }]
+        }
+    }
+
+)
+
+  }
+/* ===========================
+PART 6 — TIMELINE ANALYSIS
+=========================== */
+
+function generateTimeline(data){
+
+let blocks=[0,0,0,0,0,0]
+
+if(data.responses){
+
+    let total = data.responses.length
+
+    data.responses.forEach((r,i)=>{
+
+        if(!r) return
+
+        let block = Math.floor(i/(total/6))
+
+        if(block<6){
+            blocks[block]++
+        }
+
+    })
+
+}
+
+let html = `
+<div class="section">
+
+    <h2>Timeline Analysis</h2>
+
+    <canvas id="timelineChart"></canvas>
+
+</div>
+`
+
+document.getElementById("timelineAnalysis").innerHTML = html
+
+
+new Chart(
+
+    document.getElementById("timelineChart"),
+
+    {
+        type:"bar",
+        data:{
+            labels:[
+                "0-30 min",
+                "30-60 min",
+                "60-90 min",
+                "90-120 min",
+                "120-150 min",
+                "150-180 min"
+            ],
+            datasets:[{
+                label:"Questions Attempted",
+                data:blocks
+            }]
+        }
+    }
+
+)
+
+  }
+  
 generateOverview(data)
 
 generateSubjectAnalysis(data)
