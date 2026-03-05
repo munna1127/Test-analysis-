@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>JEE ULTRA AI Report</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+margin:30px;
+background:#f5f7fb;
+}
+
+.section{
+background:white;
+padding:30px;
+margin-bottom:40px;
+border-radius:10px;
+box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+}
+
+.card{
+border:1px solid #eee;
+padding:20px;
+border-radius:8px;
+text-align:center;
+}
+
+.big{
+font-size:28px;
+font-weight:bold;
+}
+
+canvas{
+max-height:350px;
+}
+
+.heat{
+display:grid;
+grid-template-columns:repeat(10,1fr);
+gap:6px;
+}
+
+.box{
+padding:10px;
+text-align:center;
+border-radius:5px;
+color:white;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h1>JEE ULTRA AI Analytics</h1>
+
+<input type="file" id="file">
+
+<div id="overview"></div>
+<div id="rank"></div>
+<div id="subject"></div>
+<div id="difficulty"></div>
+<div id="behavior"></div>
+<div id="radar"></div>
+<div id="heatmap"></div>
+<div id="concept"></div>
+<div id="optimizer"></div>
+<div id="study"></div>
+
+
+<script>
+
+document.getElementById("file").addEventListener("change",function(){
+
+let reader=new FileReader()
+
+reader.onload=(e)=>{
+
+let data=JSON.parse(e.target.result)
+
+runAI(data)
+
+}
+
+reader.readAsText(this.files[0])
+
+})
+
+
+
+function runAI(data){
+
+const responses=data.responses||[]
+
+let correct=0
+let incorrect=0
+let attempted=0
+let totalTime=0
+
+let subject={}
+let topic={}
+let difficulty={}
+
+let behavior={
+confident:0,
+slow:0,
+guessWrong:0,
+guessCorrect:0
+}
+
+let smartAttempts=0
+
+responses.forEach((r,i)=>{
+
+if(!r) return
+
+attempted++
+
+let isCorrect=r.selected===r.correct
+let time=r.time||0
+
+totalTime+=time
+
+if(isCorrect) correct++
+else incorrect++
+
+
+/* SUBJECT */
+
+if(!subject[r.subject])
+subject[r.subject]={correct:0,incorrect:0}
+
+if(isCorrect)
+subject[r.subject].correct++
+else
+subject[r.subject].incorrect++
+
+
+/* TOPIC */
+
+if(!topic[r.topic])
+topic[r.topic]={correct:0,incorrect:0}
+
+if(isCorrect)
+topic[r.topic].correct++
+else
+topic[r.topic].incorrect++
+
+
+/* DIFFICULTY */
+
+if(!difficulty[r.difficulty])
+difficulty[r.difficulty]={correct:0,incorrect:0}
+
+if(isCorrect)
+difficulty[r.difficulty].correct++
+else
+difficulty[r.difficulty].incorrect++
+
+
+/* BEHAVIOR AI */
+
+if(isCorrect && time<60){
+
+behavior.confident++
+smartAttempts++
+
+}
+
+if(isCorrect && time>120){
+
+behavior.slow++
+
+}
+
+if(!isCorrect && time<20){
+
+behavior.guessWrong++
+
+}
+
+if(isCorrect && time<20){
+
+behavior.guessCorrect++
+
+}
+
+})
+
+
+/* BASIC METRICS */
+
+let score=correct*4-incorrect
+let accuracy=Math.round((correct/attempted)*100)
+let avgTime=Math.round(totalTime/attempted)
+
+
+/* SPEED SCORE */
+
+let expectedTime=90
+let efficiency=Math.round((expectedTime/avgTime)*100)
+
+
+/* PERCENTILE MODEL */
+
+let percentile=Math.min(99.9,(score/300)*100)
+
+
+/* AIR SIMULATION */
+
+let rank=Math.round((100-percentile)*15000)
+
+
+/* CONCEPT MASTERY */
+
+let weak=[]
+let strong=[]
+
+Object.keys(topic).forEach(t=>{
+
+let c=topic[t].correct
+let ic=topic[t].incorrect
+
+let mastery=(c/(c+ic))*100
+
+if(mastery<40) weak.push(t)
+if(mastery>70) strong.push(t)
+
+})
+
+
+/* OVERVIEW */
+
+document.getElementById("overview").innerHTML=`
+
+<div class="section">
+
+<h2>Overview</h2>
+
+<div class="grid">
+
+<div class="card">Score<div class="big">${score}</div></div>
+
+<div class="card">Accuracy<div class="big">${accuracy}%</div></div>
+
+<div class="card">Avg Time<div class="big">${avgTime}s</div></div>
+
+<div class="card">Efficiency<div class="big">${efficiency}%</div></div>
+
+</div>
+
+</div>
+`
+
+
+
+/* RANK PREDICTOR */
+
+document.getElementById("rank").innerHTML=`
+
+<div class="section">
+
+<h2>Rank Prediction</h2>
+
+<div class="grid">
+
+<div class="card">
+
+Percentile
+
+<div class="big">${percentile.toFixed(2)}</div>
+
+</div>
+
+<div class="card">
+
+Predicted AIR
+
+<div class="big">${rank}</div>
+
+</div>
+
+</div>
+
+</div>
+`
+
+
+
+/* SUBJECT CHART */
+
+document.getElementById("subject").innerHTML=`
+
+<div class="section">
+
+<h2>Subject Analysis</h2>
+
+<canvas id="subjectChart"></canvas>
+
+</div>
+`
+
+new Chart(
+
+document.getElementById("subjectChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:Object.keys(subject),
+
+datasets:[{
+
+label:"Correct",
+
+data:Object.values(subject).map(s=>s.correct)
+
+}]
+
+}
+
+})
+
+
+
+/* DIFFICULTY */
+
+document.getElementById("difficulty").innerHTML=`
+
+<div class="section">
+
+<h2>Difficulty Performance</h2>
+
+<canvas id="diffChart"></canvas>
+
+</div>
+`
+
+new Chart(
+
+document.getElementById("diffChart"),
+
+{
+
+type:"bar",
+
+data:{
+
+labels:Object.keys(difficulty),
+
+datasets:[{
+
+label:"Correct",
+
+data:Object.values(difficulty).map(s=>s.correct)
+
+}]
+
+}
+
+})
+
+
+
+/* BEHAVIOR AI */
+
+document.getElementById("behavior").innerHTML=`
+
+<div class="section">
+
+<h2>Behavior AI</h2>
+
+<canvas id="behaviorChart"></canvas>
+
+</div>
+`
+
+new Chart(
+
+document.getElementById("behaviorChart"),
+
+{
+
+type:"pie",
+
+data:{
+
+labels:[
+"Confident Correct",
+"Slow Correct",
+"Guess Correct",
+"Guess Wrong"
+],
+
+datasets:[{
+
+data:[
+behavior.confident,
+behavior.slow,
+behavior.guessCorrect,
+behavior.guessWrong
+]
+
+}]
+
+}
+
+})
+
+
+
+/* RADAR */
+
+document.getElementById("radar").innerHTML=`
+
+<div class="section">
+
+<h2>Performance Radar</h2>
+
+<canvas id="radarChart"></canvas>
+
+</div>
+`
+
+new Chart(
+
+document.getElementById("radarChart"),
+
+{
+
+type:"radar",
+
+data:{
+
+labels:[
+"Accuracy",
+"Speed",
+"Concept",
+"Smart Attempts"
+],
+
+datasets:[{
+
+data:[
+accuracy,
+efficiency,
+strong.length*10,
+smartAttempts*5
+]
+
+}]
+
+}
+
+})
+
+
+
+/* HEATMAP */
+
+let heatHTML=""
+
+responses.forEach((r,i)=>{
+
+let color="#ccc"
+
+if(r){
+
+if(r.selected===r.correct)
+color="#4CAF50"
+else
+color="#F44336"
+
+}
+
+heatHTML+=`<div class="box" style="background:${color}">${i+1}</div>`
+
+})
+
+document.getElementById("heatmap").innerHTML=`
+
+<div class="section">
+
+<h2>Question Heatmap</h2>
+
+<div class="heat">
+
+${heatHTML}
+
+</div>
+
+</div>
+`
+
+
+
+/* CONCEPT ANALYSIS */
+
+document.getElementById("concept").innerHTML=`
+
+<div class="section">
+
+<h2>Concept Mastery</h2>
+
+<b>Strong Topics</b>
+
+<ul>
+
+${strong.map(t=>`<li>${t}</li>`).join("")}
+
+</ul>
+
+<b>Weak Topics</b>
+
+<ul>
+
+${weak.map(t=>`<li>${t}</li>`).join("")}
+
+</ul>
+
+</div>
+`
+
+
+
+/* SPEED VS ACCURACY OPTIMIZER */
+
+let suggestion=""
+
+if(avgTime>110)
+suggestion="You are spending too much time. Improve speed."
+
+if(accuracy<60)
+suggestion="Focus on concept clarity to improve accuracy."
+
+document.getElementById("optimizer").innerHTML=`
+
+<div class="section">
+
+<h2>AI Strategy Optimizer</h2>
+
+<p>${suggestion}</p>
+
+</div>
+`
+
+
+
+/* AI STUDY PLAN */
+
+let studyPlan=""
+
+weak.forEach(t=>{
+
+studyPlan+=`<li>Revise concept: <b>${t}</b></li>`
+
+})
+
+document.getElementById("study").innerHTML=`
+
+<div class="section">
+
+<h2>AI Study Plan</h2>
+
+<ul>
+
+${studyPlan}
+
+</ul>
+
+</div>
+`
+
+}
+
+</script>
+
+</body>
+
+</html>
