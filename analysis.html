@@ -1,26 +1,17 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-
-<title>Advanced Test Analysis</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
+<!DOCTYPE html><html><head><title>JEE Advanced Full Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
 
 body{
 font-family:Arial;
-margin:40px;
-background:#f4f6fa;
+margin:30px;
+background:#f5f7fb;
 }
 
-.card{
+.page{
 background:white;
-padding:20px;
-margin-bottom:20px;
+padding:40px;
+margin-bottom:40px;
 border-radius:10px;
-box-shadow:0 2px 10px rgba(0,0,0,0.08);
+box-shadow:0 3px 12px rgba(0,0,0,0.1);
 }
 
 .grid{
@@ -29,8 +20,15 @@ grid-template-columns:repeat(4,1fr);
 gap:20px;
 }
 
+.card{
+border:1px solid #eee;
+padding:20px;
+text-align:center;
+border-radius:8px;
+}
+
 .big{
-font-size:26px;
+font-size:30px;
 font-weight:bold;
 }
 
@@ -45,99 +43,38 @@ border-bottom:1px solid #eee;
 text-align:center;
 }
 
-</style>
+canvas{
+max-height:350px;
+}
 
-</head>
+#heatmap{
+display:grid;
+grid-template-columns:repeat(10,1fr);
+gap:8px;
+}
 
-<body>
+.box{
+padding:10px;
+text-align:center;
+border-radius:6px;
+color:white;
+}
 
-<h1>JEE Test Analysis</h1>
+button{
+padding:12px 20px;
+margin-top:20px;
+background:#4CAF50;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
 
-<input type="file" id="fileInput">
+</style></head><body><h1>JEE Complete Test Report</h1><input type="file" id="fileInput"><br><br>
 
-<br><br>
+<button onclick="window.print()">Download PDF</button>
 
-
-<div class="card">
-
-<div class="grid">
-
-<div>
-Score
-<div id="score" class="big">-</div>
-</div>
-
-<div>
-Accuracy
-<div id="accuracy" class="big">-</div>
-</div>
-
-<div>
-Attempted
-<div id="attempted" class="big">-</div>
-</div>
-
-<div>
-Incorrect
-<div id="incorrect" class="big">-</div>
-</div>
-
-</div>
-
-</div>
-
-
-
-<div class="card">
-
-<h2>Attempt Quality</h2>
-
-<canvas id="attemptChart"></canvas>
-
-</div>
-
-
-<div class="card">
-
-<h2>Difficulty Analysis</h2>
-
-<canvas id="difficultyChart"></canvas>
-
-</div>
-
-
-
-<div class="card">
-
-<h2>30 Minute Timeline</h2>
-
-<canvas id="timelineChart"></canvas>
-
-</div>
-
-
-
-<div class="card">
-
-<h2>Missed Concepts</h2>
-
-<div id="missed"></div>
-
-</div>
-
-
-
-<div class="card">
-
-<h2>Subject Switching</h2>
-
-<div id="movement"></div>
-
-</div>
-
-
-
-<script>
+<div id="report"></div><script>
 
 document.getElementById("fileInput").addEventListener("change",function(){
 
@@ -147,7 +84,7 @@ reader.onload=(e)=>{
 
 let data=JSON.parse(e.target.result)
 
-analyze(data)
+generateReport(data)
 
 }
 
@@ -156,25 +93,37 @@ reader.readAsText(this.files[0])
 })
 
 
-function analyze(data){
+function estimatePercentile(score){
+
+if(score>250) return 99.9
+if(score>220) return 99
+if(score>200) return 98
+if(score>180) return 95
+if(score>150) return 90
+if(score>120) return 80
+if(score>100) return 70
+return 50
+
+}
+
+
+function generateReport(data){
 
 let correct=data.correct
 let incorrect=data.incorrect
 let attempted=data.attempted
 
-let score=correct*4 - incorrect
-let accuracy=Math.round((correct/attempted)*100)
+let score=correct*4-incorrect
 
-document.getElementById("score").innerText=score
-document.getElementById("accuracy").innerText=accuracy+"%"
-document.getElementById("attempted").innerText=attempted
-document.getElementById("incorrect").innerText=incorrect
+let accuracy=attempted?Math.round(correct/attempted*100):0
 
+let percentile=estimatePercentile(score)
 
-
-let perfect=0
-let overtime=0
-let confused=0
+let subjects={
+Physics:{correct:0,incorrect:0},
+Chemistry:{correct:0,incorrect:0},
+Maths:{correct:0,incorrect:0}
+}
 
 let difficulty={
 Easy:0,
@@ -182,61 +131,59 @@ Moderate:0,
 Hard:0
 }
 
+let timeData=[]
+let questionLabels=[]
+
 let timeline=[0,0,0,0,0,0]
 
+let perfect=0
+let overtime=0
+let confused=0
+
+let painful=[]
 let missed=[]
 let movement=[]
+let weakTopics={}
 
 let lastSubject=null
-
 
 
 data.responses.forEach((r,i)=>{
 
 if(!r)return
 
+timeData.push(r.time)
+questionLabels.push("Q"+(i+1))
+
+let block=Math.floor(i/(data.responses.length/6))
+if(block<6) timeline[block]++
+
 if(r.selected==r.correct && r.time<90){
-
 perfect++
-
-}
-
-else if(r.time>120){
-
+}else if(r.time>120){
 overtime++
-
-}
-
-else{
-
+}else{
 confused++
-
 }
-
-
 
 difficulty[r.difficulty]++
 
-
-
-let block=Math.floor(r.time/30)
-
-if(block<6) timeline[block]++
-
-
-
-if(r.selected!=r.correct){
-
+if(r.selected==r.correct){
+subjects[r.subject].correct++
+}else{
+subjects[r.subject].incorrect++
 missed.push(r.topic)
 
+if(!weakTopics[r.topic]) weakTopics[r.topic]=0
+weakTopics[r.topic]++
 }
 
+if(r.time>120 && r.selected!=r.correct){
+painful.push(i+1)
+}
 
-
-if(lastSubject && lastSubject!=r.subject){
-
+if(lastSubject && lastSubject!==r.subject){
 movement.push(lastSubject+" → "+r.subject)
-
 }
 
 lastSubject=r.subject
@@ -244,97 +191,200 @@ lastSubject=r.subject
 })
 
 
+let summary=""
 
-document.getElementById("missed").innerText=[...new Set(missed)].join(", ")
+if(percentile>98){
+summary="Excellent performance. You are likely to secure a top rank."
+}
+else if(percentile>90){
+summary="Very good performance. With slight improvement you can reach top percentile."
+}
+else if(percentile>80){
+summary="Good performance but accuracy and time management need improvement."
+}
+else{
+summary="You need to focus on concepts and reduce mistakes."
+}
 
-document.getElementById("movement").innerHTML=movement.join("<br>")
+
+let html=`
+
+<div class="page">
+
+<h2>Overview</h2>
+
+<div class="grid">
+
+<div class="card">Score<div class="big">${score}</div></div>
+<div class="card">Accuracy<div class="big">${accuracy}%</div></div>
+<div class="card">Attempted<div class="big">${attempted}</div></div>
+<div class="card">Percentile<div class="big">${percentile}</div></div>
+
+</div>
+
+</div>
 
 
+<div class="page">
 
-new Chart(
+<h2>Performance Summary</h2>
 
-document.getElementById("attemptChart"),
+<p>${summary}</p>
 
-{
+</div>
 
+
+<div class="page">
+
+<h2>Subject Analysis</h2>
+
+<table>
+
+<tr>
+<th>Subject</th>
+<th>Correct</th>
+<th>Incorrect</th>
+</tr>
+
+<tr>
+<td>Physics</td>
+<td>${subjects.Physics.correct}</td>
+<td>${subjects.Physics.incorrect}</td>
+</tr>
+
+<tr>
+<td>Chemistry</td>
+<td>${subjects.Chemistry.correct}</td>
+<td>${subjects.Chemistry.incorrect}</td>
+</tr>
+
+<tr>
+<td>Maths</td>
+<td>${subjects.Maths.correct}</td>
+<td>${subjects.Maths.incorrect}</td>
+</tr>
+
+</table>
+
+</div>
+
+
+<div class="page">
+
+<h2>Correct vs Incorrect</h2>
+
+<canvas id="accuracyChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>Difficulty Analysis</h2>
+
+<canvas id="difficultyChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>Time per Question</h2>
+
+<canvas id="timeChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>Attempt Quality</h2>
+
+<canvas id="attemptChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>Question Heatmap</h2>
+
+<div id="heatmap"></div>
+
+</div>
+
+`
+
+document.getElementById("report").innerHTML=html
+
+
+let heatmapHTML=""
+
+data.responses.forEach((r,i)=>{
+
+if(!r)return
+
+let color="#ccc"
+
+if(r.selected==r.correct){
+color="#4CAF50"
+}else if(r.time>120){
+color="#FF9800"
+}else{
+color="#F44336"
+}
+
+heatmapHTML+=`<div class="box" style="background:${color}">${i+1}</div>`
+
+})
+
+document.getElementById("heatmap").innerHTML=heatmapHTML
+
+
+new Chart(document.getElementById("accuracyChart"),{
 type:"pie",
-
 data:{
-
-labels:["Perfect","Overtime","Confused"],
-
-datasets:[{
-
-data:[perfect,overtime,confused]
-
-}]
-
+labels:["Correct","Incorrect"],
+datasets:[{data:[correct,incorrect]}]
 }
-
 })
 
 
-
-new Chart(
-
-document.getElementById("difficultyChart"),
-
-{
-
+new Chart(document.getElementById("difficultyChart"),{
 type:"bar",
-
 data:{
-
 labels:["Easy","Moderate","Hard"],
-
 datasets:[{
-
 label:"Questions",
-
-data:[
-
-difficulty.Easy,
-difficulty.Moderate,
-difficulty.Hard
-
-]
-
+data:[difficulty.Easy,difficulty.Moderate,difficulty.Hard]
 }]
-
 }
-
 })
 
 
-
-new Chart(
-
-document.getElementById("timelineChart"),
-
-{
-
+new Chart(document.getElementById("timeChart"),{
 type:"line",
-
 data:{
-
-labels:["0-30","30-60","60-90","90-120","120-150","150-180"],
-
+labels:questionLabels,
 datasets:[{
-
-label:"Attempts",
-
-data:timeline
-
+label:"Time (seconds)",
+data:timeData
 }]
-
 }
+})
 
+
+new Chart(document.getElementById("attemptChart"),{
+type:"pie",
+data:{
+labels:["Perfect","Overtime","Confused"],
+datasets:[{
+data:[perfect,overtime,confused]
+}]
+}
 })
 
 }
 
-</script>
-
-</body>
-
+</script></body>
 </html>
