@@ -2,7 +2,8 @@
 <html>
 
 <head>
-<title>Mathongo Style JEE Report</title>
+
+<title>JEE ULTRA AI Report</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -16,14 +17,10 @@ background:#f5f7fb;
 
 .section{
 background:white;
-padding:40px;
+padding:30px;
 margin-bottom:40px;
 border-radius:10px;
-box-shadow:0 3px 12px rgba(0,0,0,0.1);
-}
-
-h2{
-margin-bottom:20px;
+box-shadow:0 4px 15px rgba(0,0,0,0.1);
 }
 
 .grid{
@@ -35,8 +32,8 @@ gap:20px;
 .card{
 border:1px solid #eee;
 padding:20px;
-text-align:center;
 border-radius:8px;
+text-align:center;
 }
 
 .big{
@@ -48,46 +45,45 @@ canvas{
 max-height:350px;
 }
 
-table{
-width:100%;
-border-collapse:collapse;
+.heat{
+display:grid;
+grid-template-columns:repeat(10,1fr);
+gap:6px;
 }
 
-th,td{
+.box{
 padding:10px;
-border-bottom:1px solid #eee;
 text-align:center;
+border-radius:5px;
+color:white;
 }
 
 </style>
+
 </head>
 
 
 <body>
 
-<h1>JEE Test Detailed Analysis</h1>
+<h1>JEE ULTRA AI Analytics</h1>
 
-<input type="file" id="fileInput">
+<input type="file" id="file">
 
 <div id="overview"></div>
-<div id="subjectAnalysis"></div>
-<div id="accuracyGraph"></div>
-<div id="difficultyAnalysis"></div>
-<div id="timePerQuestion"></div>
-<div id="timelineAnalysis"></div>
-<div id="attemptQuality"></div>
-<div id="painfulQuestions"></div>
-<div id="missedConcepts"></div>
+<div id="rank"></div>
+<div id="subject"></div>
+<div id="difficulty"></div>
+<div id="behavior"></div>
+<div id="radar"></div>
 <div id="heatmap"></div>
-<div id="subjectMovement"></div>
-<div id="weakTopics"></div>
-<div id="questionTable"></div>
-<div id="performanceSummary"></div>
+<div id="concept"></div>
+<div id="optimizer"></div>
+<div id="study"></div>
 
 
 <script>
 
-document.getElementById("fileInput").addEventListener("change",function(){
+document.getElementById("file").addEventListener("change",function(){
 
 let reader=new FileReader()
 
@@ -95,7 +91,7 @@ reader.onload=(e)=>{
 
 let data=JSON.parse(e.target.result)
 
-startAnalysis(data)
+runAI(data)
 
 }
 
@@ -104,98 +100,197 @@ reader.readAsText(this.files[0])
 })
 
 
-function startAnalysis(data){
 
-let responses = data.responses || []
+function runAI(data){
 
+const responses=data.responses||[]
 
-/* ===========================
-OVERVIEW
-=========================== */
+let correct=0
+let incorrect=0
+let attempted=0
+let totalTime=0
 
-function generateOverview(){
+let subject={}
+let topic={}
+let difficulty={}
 
-let correct = data.correct || 0
-let incorrect = data.incorrect || 0
-let attempted = data.attempted || 0
-let total = responses.length
+let behavior={
+confident:0,
+slow:0,
+guessWrong:0,
+guessCorrect:0
+}
 
-let score = correct*4 - incorrect
-let accuracy = attempted ? Math.round(correct/attempted*100) : 0
-let unattempted = total - attempted
+let smartAttempts=0
 
-let totalTime = 0
+responses.forEach((r,i)=>{
 
-responses.forEach(r=>{
-if(!r) return
-totalTime += r.time || 0
-})
-
-let avgTime = attempted ? Math.round(totalTime/attempted) : 0
-
-let physicsAttempt=0
-let chemistryAttempt=0
-let mathsAttempt=0
-
-responses.forEach(r=>{
 if(!r) return
 
-if(r.subject==="Physics") physicsAttempt++
-if(r.subject==="Chemistry") chemistryAttempt++
-if(r.subject==="Maths") mathsAttempt++
+attempted++
+
+let isCorrect=r.selected===r.correct
+let time=r.time||0
+
+totalTime+=time
+
+if(isCorrect) correct++
+else incorrect++
+
+
+/* SUBJECT */
+
+if(!subject[r.subject])
+subject[r.subject]={correct:0,incorrect:0}
+
+if(isCorrect)
+subject[r.subject].correct++
+else
+subject[r.subject].incorrect++
+
+
+/* TOPIC */
+
+if(!topic[r.topic])
+topic[r.topic]={correct:0,incorrect:0}
+
+if(isCorrect)
+topic[r.topic].correct++
+else
+topic[r.topic].incorrect++
+
+
+/* DIFFICULTY */
+
+if(!difficulty[r.difficulty])
+difficulty[r.difficulty]={correct:0,incorrect:0}
+
+if(isCorrect)
+difficulty[r.difficulty].correct++
+else
+difficulty[r.difficulty].incorrect++
+
+
+/* BEHAVIOR AI */
+
+if(isCorrect && time<60){
+
+behavior.confident++
+smartAttempts++
+
+}
+
+if(isCorrect && time>120){
+
+behavior.slow++
+
+}
+
+if(!isCorrect && time<20){
+
+behavior.guessWrong++
+
+}
+
+if(isCorrect && time<20){
+
+behavior.guessCorrect++
+
+}
+
 })
 
-document.getElementById("overview").innerHTML = `
+
+/* BASIC METRICS */
+
+let score=correct*4-incorrect
+let accuracy=Math.round((correct/attempted)*100)
+let avgTime=Math.round(totalTime/attempted)
+
+
+/* SPEED SCORE */
+
+let expectedTime=90
+let efficiency=Math.round((expectedTime/avgTime)*100)
+
+
+/* PERCENTILE MODEL */
+
+let percentile=Math.min(99.9,(score/300)*100)
+
+
+/* AIR SIMULATION */
+
+let rank=Math.round((100-percentile)*15000)
+
+
+/* CONCEPT MASTERY */
+
+let weak=[]
+let strong=[]
+
+Object.keys(topic).forEach(t=>{
+
+let c=topic[t].correct
+let ic=topic[t].incorrect
+
+let mastery=(c/(c+ic))*100
+
+if(mastery<40) weak.push(t)
+if(mastery>70) strong.push(t)
+
+})
+
+
+/* OVERVIEW */
+
+document.getElementById("overview").innerHTML=`
+
 <div class="section">
 
 <h2>Overview</h2>
 
 <div class="grid">
 
-<div class="card">
-Score
-<div class="big">${score}</div>
-</div>
+<div class="card">Score<div class="big">${score}</div></div>
 
-<div class="card">
-Accuracy
-<div class="big">${accuracy}%</div>
-</div>
+<div class="card">Accuracy<div class="big">${accuracy}%</div></div>
 
-<div class="card">
-Attempted
-<div class="big">${attempted}</div>
-</div>
+<div class="card">Avg Time<div class="big">${avgTime}s</div></div>
 
-<div class="card">
-Unattempted
-<div class="big">${unattempted}</div>
-</div>
+<div class="card">Efficiency<div class="big">${efficiency}%</div></div>
 
 </div>
 
-<br>
+</div>
+`
+
+
+
+/* RANK PREDICTOR */
+
+document.getElementById("rank").innerHTML=`
+
+<div class="section">
+
+<h2>Rank Prediction</h2>
 
 <div class="grid">
 
 <div class="card">
-Avg Time / Question
-<div class="big">${avgTime}s</div>
+
+Percentile
+
+<div class="big">${percentile.toFixed(2)}</div>
+
 </div>
 
 <div class="card">
-Physics Attempts
-<div class="big">${physicsAttempt}</div>
-</div>
 
-<div class="card">
-Chemistry Attempts
-<div class="big">${chemistryAttempt}</div>
-</div>
+Predicted AIR
 
-<div class="card">
-Maths Attempts
-<div class="big">${mathsAttempt}</div>
+<div class="big">${rank}</div>
+
 </div>
 
 </div>
@@ -203,74 +298,15 @@ Maths Attempts
 </div>
 `
 
-}
 
 
+/* SUBJECT CHART */
 
-/* ===========================
-SUBJECT ANALYSIS
-=========================== */
+document.getElementById("subject").innerHTML=`
 
-function generateSubjectAnalysis(){
-
-let subjects = {
-Physics:{correct:0,incorrect:0,attempt:0},
-Chemistry:{correct:0,incorrect:0,attempt:0},
-Maths:{correct:0,incorrect:0,attempt:0}
-}
-
-responses.forEach(r=>{
-
-if(!r || !subjects[r.subject]) return
-
-subjects[r.subject].attempt++
-
-if(r.selected === r.correct){
-subjects[r.subject].correct++
-}else{
-subjects[r.subject].incorrect++
-}
-
-})
-
-document.getElementById("subjectAnalysis").innerHTML=`
 <div class="section">
 
 <h2>Subject Analysis</h2>
-
-<table>
-
-<tr>
-<th>Subject</th>
-<th>Attempted</th>
-<th>Correct</th>
-<th>Incorrect</th>
-</tr>
-
-<tr>
-<td>Physics</td>
-<td>${subjects.Physics.attempt}</td>
-<td>${subjects.Physics.correct}</td>
-<td>${subjects.Physics.incorrect}</td>
-</tr>
-
-<tr>
-<td>Chemistry</td>
-<td>${subjects.Chemistry.attempt}</td>
-<td>${subjects.Chemistry.correct}</td>
-<td>${subjects.Chemistry.incorrect}</td>
-</tr>
-
-<tr>
-<td>Maths</td>
-<td>${subjects.Maths.attempt}</td>
-<td>${subjects.Maths.correct}</td>
-<td>${subjects.Maths.incorrect}</td>
-</tr>
-
-</table>
-
-<br>
 
 <canvas id="subjectChart"></canvas>
 
@@ -278,138 +314,167 @@ document.getElementById("subjectAnalysis").innerHTML=`
 `
 
 new Chart(
+
 document.getElementById("subjectChart"),
+
 {
+
 type:"bar",
+
 data:{
-labels:["Physics","Chemistry","Maths"],
+
+labels:Object.keys(subject),
+
 datasets:[{
+
 label:"Correct",
-data:[
-subjects.Physics.correct,
-subjects.Chemistry.correct,
-subjects.Maths.correct
-]
+
+data:Object.values(subject).map(s=>s.correct)
+
 }]
-}
-})
 
 }
 
-
-
-/* ===========================
-TIME PER QUESTION
-=========================== */
-
-function generateTimePerQuestion(){
-
-let labels=[]
-let timeData=[]
-
-responses.forEach((r,i)=>{
-if(!r) return
-
-labels.push("Q"+(i+1))
-timeData.push(r.time || 0)
 })
 
-document.getElementById("timePerQuestion").innerHTML=`
+
+
+/* DIFFICULTY */
+
+document.getElementById("difficulty").innerHTML=`
 
 <div class="section">
 
-<h2>Time Per Question</h2>
+<h2>Difficulty Performance</h2>
 
-<canvas id="timeChart"></canvas>
+<canvas id="diffChart"></canvas>
 
 </div>
 `
 
 new Chart(
-document.getElementById("timeChart"),
+
+document.getElementById("diffChart"),
+
 {
-type:"line",
-data:{
-labels:labels,
-datasets:[{
-label:"Time (sec)",
-data:timeData
-}]
-}
-})
 
-}
-
-
-
-/* ===========================
-TIMELINE
-=========================== */
-
-function generateTimeline(){
-
-let blocks=[0,0,0,0,0,0]
-
-let total = responses.length || 1
-
-responses.forEach((r,i)=>{
-
-if(!r) return
-
-let block = Math.floor(i/(total/6))
-
-if(block>5) block=5
-
-blocks[block]++
-
-})
-
-document.getElementById("timelineAnalysis").innerHTML=`
-
-<div class="section">
-
-<h2>Timeline Analysis</h2>
-
-<canvas id="timelineChart"></canvas>
-
-</div>
-`
-
-new Chart(
-document.getElementById("timelineChart"),
-{
 type:"bar",
+
 data:{
-labels:[
-"0-30",
-"30-60",
-"60-90",
-"90-120",
-"120-150",
-"150-180"
-],
+
+labels:Object.keys(difficulty),
+
 datasets:[{
-label:"Attempts",
-data:blocks
+
+label:"Correct",
+
+data:Object.values(difficulty).map(s=>s.correct)
+
 }]
+
 }
+
 })
 
+
+
+/* BEHAVIOR AI */
+
+document.getElementById("behavior").innerHTML=`
+
+<div class="section">
+
+<h2>Behavior AI</h2>
+
+<canvas id="behaviorChart"></canvas>
+
+</div>
+`
+
+new Chart(
+
+document.getElementById("behaviorChart"),
+
+{
+
+type:"pie",
+
+data:{
+
+labels:[
+"Confident Correct",
+"Slow Correct",
+"Guess Correct",
+"Guess Wrong"
+],
+
+datasets:[{
+
+data:[
+behavior.confident,
+behavior.slow,
+behavior.guessCorrect,
+behavior.guessWrong
+]
+
+}]
+
 }
 
+})
 
 
-/* ===========================
-HEATMAP
-=========================== */
 
-function generateHeatmap(){
+/* RADAR */
 
-let html=`
+document.getElementById("radar").innerHTML=`
+
 <div class="section">
-<h2>Question Heatmap</h2>
-<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px;">
+
+<h2>Performance Radar</h2>
+
+<canvas id="radarChart"></canvas>
+
+</div>
 `
+
+new Chart(
+
+document.getElementById("radarChart"),
+
+{
+
+type:"radar",
+
+data:{
+
+labels:[
+"Accuracy",
+"Speed",
+"Concept",
+"Smart Attempts"
+],
+
+datasets:[{
+
+data:[
+accuracy,
+efficiency,
+strong.length*10,
+smartAttempts*5
+]
+
+}]
+
+}
+
+})
+
+
+
+/* HEATMAP */
+
+let heatHTML=""
 
 responses.forEach((r,i)=>{
 
@@ -417,88 +482,115 @@ let color="#ccc"
 
 if(r){
 
-if(r.selected===r.correct){
+if(r.selected===r.correct)
 color="#4CAF50"
-}
-else{
+else
 color="#F44336"
-}
 
 }
 
-html+=`
-<div style="
-padding:12px;
-text-align:center;
-border-radius:6px;
-color:white;
-background:${color};
-">
-${i+1}
-</div>
-`
+heatHTML+=`<div class="box" style="background:${color}">${i+1}</div>`
 
 })
 
-html+=`</div></div>`
-
-document.getElementById("heatmap").innerHTML=html
-
-}
-
-
-
-/* ===========================
-PERFORMANCE SUMMARY
-=========================== */
-
-function generatePerformanceSummary(){
-
-let correct=data.correct||0
-let incorrect=data.incorrect||0
-let score=correct*4-incorrect
-
-let level="Needs Improvement"
-
-if(score>250) level="Excellent"
-else if(score>200) level="Very Good"
-else if(score>150) level="Good"
-
-document.getElementById("performanceSummary").innerHTML=`
+document.getElementById("heatmap").innerHTML=`
 
 <div class="section">
 
-<h2>Performance Summary</h2>
+<h2>Question Heatmap</h2>
 
-<div class="card">
+<div class="heat">
 
-<h3>${level}</h3>
-
-<p>Score : ${score}</p>
+${heatHTML}
 
 </div>
 
 </div>
 `
 
-}
+
+
+/* CONCEPT ANALYSIS */
+
+document.getElementById("concept").innerHTML=`
+
+<div class="section">
+
+<h2>Concept Mastery</h2>
+
+<b>Strong Topics</b>
+
+<ul>
+
+${strong.map(t=>`<li>${t}</li>`).join("")}
+
+</ul>
+
+<b>Weak Topics</b>
+
+<ul>
+
+${weak.map(t=>`<li>${t}</li>`).join("")}
+
+</ul>
+
+</div>
+`
 
 
 
-/* ===========================
-CALL ALL
-=========================== */
+/* SPEED VS ACCURACY OPTIMIZER */
 
-generateOverview()
-generateSubjectAnalysis()
-generateTimePerQuestion()
-generateTimeline()
-generateHeatmap()
-generatePerformanceSummary()
+let suggestion=""
+
+if(avgTime>110)
+suggestion="You are spending too much time. Improve speed."
+
+if(accuracy<60)
+suggestion="Focus on concept clarity to improve accuracy."
+
+document.getElementById("optimizer").innerHTML=`
+
+<div class="section">
+
+<h2>AI Strategy Optimizer</h2>
+
+<p>${suggestion}</p>
+
+</div>
+`
+
+
+
+/* AI STUDY PLAN */
+
+let studyPlan=""
+
+weak.forEach(t=>{
+
+studyPlan+=`<li>Revise concept: <b>${t}</b></li>`
+
+})
+
+document.getElementById("study").innerHTML=`
+
+<div class="section">
+
+<h2>AI Study Plan</h2>
+
+<ul>
+
+${studyPlan}
+
+</ul>
+
+</div>
+`
 
 }
 
 </script>
 
 </body>
+
 </html>
