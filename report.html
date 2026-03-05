@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head>
-<title>Full Test Analysis Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
+<title>JEE Full Test Analysis</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
 
 body{
 font-family:Arial;
@@ -13,7 +13,6 @@ padding:40px;
 margin-bottom:50px;
 border-radius:10px;
 box-shadow:0 2px 10px rgba(0,0,0,0.1);
-page-break-after:always;
 }
 
 .grid{
@@ -49,6 +48,20 @@ canvas{
 max-height:300px;
 }
 
+#heatmap{
+display:grid;
+grid-template-columns:repeat(10,1fr);
+gap:8px;
+}
+
+.heat{
+padding:10px;
+color:white;
+text-align:center;
+border-radius:6px;
+font-size:14px;
+}
+
 </style></head><body><h1>JEE Full Test Analysis</h1><input type="file" id="fileInput"><div id="report"></div><script>
 
 document.getElementById("fileInput").addEventListener("change",function(){
@@ -77,6 +90,7 @@ let attempted=data.attempted
 let score=correct*4 - incorrect
 let accuracy = attempted ? Math.round((correct/attempted)*100) : 0
 
+
 let subjects={
 Physics:{correct:0,incorrect:0},
 Chemistry:{correct:0,incorrect:0},
@@ -100,6 +114,11 @@ let timeline=[0,0,0,0,0,0]
 let perfect=0
 let overtime=0
 let confused=0
+
+let movement=[]
+let lastSubject=null
+
+let weakTopics={}
 
 
 data.responses.forEach((r,i)=>{
@@ -125,6 +144,13 @@ subjects[r.subject].correct++
 }else{
 subjects[r.subject].incorrect++
 missed.push(r.topic)
+
+if(!weakTopics[r.topic]){
+weakTopics[r.topic]=0
+}
+
+weakTopics[r.topic]++
+
 }
 
 difficulty[r.difficulty]++
@@ -132,6 +158,12 @@ difficulty[r.difficulty]++
 if(r.time>120 && r.selected!=r.correct){
 painful.push(i+1)
 }
+
+if(lastSubject && lastSubject!==r.subject){
+movement.push(lastSubject+" → "+r.subject)
+}
+
+lastSubject=r.subject
 
 })
 
@@ -192,6 +224,7 @@ let html=`
 <div class="page">
 
 <h2>Correct vs Incorrect</h2>
+
 <canvas id="accuracyChart"></canvas>
 
 </div>
@@ -200,6 +233,7 @@ let html=`
 <div class="page">
 
 <h2>Difficulty Distribution</h2>
+
 <canvas id="difficultyChart"></canvas>
 
 </div>
@@ -208,6 +242,7 @@ let html=`
 <div class="page">
 
 <h2>Painful Questions</h2>
+
 ${painful.join(", ")}
 
 </div>
@@ -216,6 +251,7 @@ ${painful.join(", ")}
 <div class="page">
 
 <h2>Missed Concepts</h2>
+
 ${[...new Set(missed)].join(", ")}
 
 </div>
@@ -224,6 +260,7 @@ ${[...new Set(missed)].join(", ")}
 <div class="page">
 
 <h2>Time Per Question</h2>
+
 <canvas id="timeChart"></canvas>
 
 </div>
@@ -232,6 +269,7 @@ ${[...new Set(missed)].join(", ")}
 <div class="page">
 
 <h2>30 Minute Timeline</h2>
+
 <canvas id="timelineChart"></canvas>
 
 </div>
@@ -240,7 +278,35 @@ ${[...new Set(missed)].join(", ")}
 <div class="page">
 
 <h2>Attempt Quality</h2>
+
 <canvas id="attemptChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>Question Heatmap</h2>
+
+<div id="heatmap"></div>
+
+</div>
+
+
+<div class="page">
+
+<h2>Subject Switching</h2>
+
+${movement.join("<br>")}
+
+</div>
+
+
+<div class="page">
+
+<h2>Weak Topics</h2>
+
+${Object.keys(weakTopics).map(t=>t+" ("+weakTopics[t]+")").join("<br>")}
 
 </div>
 
@@ -296,9 +362,30 @@ html+=`
 document.getElementById("report").innerHTML=html
 
 
-new Chart(
-document.getElementById("accuracyChart"),
-{
+let heatmapHTML=""
+
+data.responses.forEach((r,i)=>{
+
+if(!r)return
+
+let color="#ccc"
+
+if(r.selected==r.correct){
+color="#4CAF50"
+}else if(r.time>120){
+color="#FF9800"
+}else{
+color="#F44336"
+}
+
+heatmapHTML+=`<div class="heat" style="background:${color}">${i+1}</div>`
+
+})
+
+document.getElementById("heatmap").innerHTML=heatmapHTML
+
+
+new Chart(document.getElementById("accuracyChart"),{
 type:"pie",
 data:{
 labels:["Correct","Incorrect"],
@@ -306,28 +393,18 @@ datasets:[{data:[correct,incorrect]}]
 }
 })
 
-
-new Chart(
-document.getElementById("difficultyChart"),
-{
+new Chart(document.getElementById("difficultyChart"),{
 type:"bar",
 data:{
 labels:["Easy","Moderate","Hard"],
 datasets:[{
 label:"Questions",
-data:[
-difficulty.Easy,
-difficulty.Moderate,
-difficulty.Hard
-]
+data:[difficulty.Easy,difficulty.Moderate,difficulty.Hard]
 }]
 }
 })
 
-
-new Chart(
-document.getElementById("timeChart"),
-{
+new Chart(document.getElementById("timeChart"),{
 type:"line",
 data:{
 labels:questionLabels,
@@ -338,10 +415,7 @@ data:timeData
 }
 })
 
-
-new Chart(
-document.getElementById("timelineChart"),
-{
+new Chart(document.getElementById("timelineChart"),{
 type:"bar",
 data:{
 labels:["0-30","30-60","60-90","90-120","120-150","150-180"],
@@ -352,10 +426,7 @@ data:timeline
 }
 })
 
-
-new Chart(
-document.getElementById("attemptChart"),
-{
+new Chart(document.getElementById("attemptChart"),{
 type:"pie",
 data:{
 labels:["Perfect","Overtime","Confused"],
@@ -368,4 +439,4 @@ data:[perfect,overtime,confused]
 }
 
 </script></body>
-  </html>
+</html>
