@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>JEE Test</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+background:#f5f5f5;
+}
+
+#question-box{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.option{
+padding:10px;
+border:1px solid #ddd;
+margin:10px 0;
+cursor:pointer;
+border-radius:6px;
+}
+
+.option:hover{
+background:#eee;
+}
+
+.selected{
+background:#cce5ff;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+}
+
+#palette button{
+margin:3px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>JEE Mock Test</h2>
+
+<div>Time Left: <span id="timer">180:00</span></div>
+
+<br>
+
+<div id="question-box">
+
+<h3 id="question"></h3>
+
+<div id="options"></div>
+
+</div>
+
+<br>
+
+<button onclick="prev()">Previous</button>
+<button onclick="next()">Next</button>
+
+<h3>Question Palette</h3>
+
+<div id="palette"></div>
+
+<script>
+
+let questions=[
+{
+id:1,
+subject:"Physics",
+topic:"Electrostatics",
+difficulty:"Easy",
+q:"Electric field unit?",
+options:["N/C","Volt","Tesla","Ampere"],
+answer:0
+},
+
+{
+id:2,
+subject:"Chemistry",
+topic:"Thermodynamics",
+difficulty:"Moderate",
+q:"First law of thermodynamics?",
+options:["PV=nRT","dQ=dU+dW","E=mc2","None"],
+answer:1
+},
+
+{
+id:3,
+subject:"Maths",
+topic:"Limits",
+difficulty:"Easy",
+q:"Limit x→0 sinx/x ?",
+options:["0","1","Infinity","-1"],
+answer:1
+}
+
+]
+
+let current=0
+
+let responses=[]
+
+let startTime=Date.now()
+
+function loadQuestion(){
+
+let q=questions[current]
+
+document.getElementById("question").innerText=(current+1)+". "+q.q
+
+let optHTML=""
+
+q.options.forEach((o,i)=>{
+
+optHTML+=`
+<div class="option" onclick="selectOption(${i})" id="opt${i}">
+${o}
+</div>
+`
+
+})
+
+document.getElementById("options").innerHTML=optHTML
+
+if(responses[current]!=undefined){
+
+document.getElementById("opt"+responses[current].selected).classList.add("selected")
+
+}
+
+}
+
+function selectOption(i){
+
+document.querySelectorAll(".option").forEach(o=>o.classList.remove("selected"))
+
+document.getElementById("opt"+i).classList.add("selected")
+
+let q=questions[current]
+
+responses[current]={
+
+question_id:q.id,
+subject:q.subject,
+topic:q.topic,
+difficulty:q.difficulty,
+selected:i,
+correct:q.answer,
+time:Math.floor((Date.now()-startTime)/1000)
+
+}
+
+}
+
+function next(){
+
+if(current<questions.length-1){
+
+current++
+
+startTime=Date.now()
+
+loadQuestion()
+
+}
+
+}
+
+function prev(){
+
+if(current>0){
+
+current--
+
+startTime=Date.now()
+
+loadQuestion()
+
+}
+
+}
+
+function buildPalette(){
+
+let html=""
+
+for(let i=0;i<questions.length;i++){
+
+html+=`<button onclick="go(${i})">${i+1}</button>`
+
+}
+
+document.getElementById("palette").innerHTML=html
+
+}
+
+function go(i){
+
+current=i
+loadQuestion()
+
+}
+
+loadQuestion()
+buildPalette()
+
+// timer
+
+let time=180*60
+
+setInterval(()=>{
+
+time--
+
+let m=Math.floor(time/60)
+let s=time%60
+
+document.getElementById("timer").innerText=m+":"+s
+
+},1000)
+
+</script>
+
+</body>
+  </html>
