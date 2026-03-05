@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Full Test Report</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+background:#f5f5f5;
+}
+
+.page{
+background:white;
+padding:40px;
+margin-bottom:40px;
+page-break-after:always;
+}
+
+h1,h2{
+margin-bottom:20px;
+}
+
+.card{
+padding:20px;
+border:1px solid #eee;
+margin-bottom:20px;
+border-radius:8px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+}
+
+.big{
+font-size:28px;
+font-weight:bold;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #ddd;
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Full Test Analysis Report</h1>
+
+<input type="file" id="fileInput">
+
+<div id="report"></div>
+
+
+<script>
+
+document.getElementById("fileInput").addEventListener("change",function(){
+
+let reader=new FileReader()
+
+reader.onload=(e)=>{
+
+let data=JSON.parse(e.target.result)
+
+generateReport(data)
+
+}
+
+reader.readAsText(this.files[0])
+
+})
+
+
+function generateReport(data){
+
+let correct=data.correct
+let incorrect=data.incorrect
+let attempted=data.attempted
+
+let score=correct*4 - incorrect
+let accuracy=Math.round((correct/attempted)*100)
+
+let html=`
+
+
+<div class="page">
+
+<h2>Overview</h2>
+
+<div class="grid">
+
+<div class="card">
+
+Score
+<div class="big">${score}</div>
+
+</div>
+
+<div class="card">
+
+Accuracy
+<div class="big">${accuracy}%</div>
+
+</div>
+
+<div class="card">
+
+Attempted
+<div class="big">${attempted}</div>
+
+</div>
+
+<div class="card">
+
+Incorrect
+<div class="big">${incorrect}</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="page">
+
+<h2>Graphical Overview</h2>
+
+<canvas id="scoreChart"></canvas>
+
+</div>
+
+
+
+<div class="page">
+
+<h2>Question Table</h2>
+
+<table>
+
+<tr>
+<th>Q</th>
+<th>Subject</th>
+<th>Topic</th>
+<th>Difficulty</th>
+<th>Time</th>
+<th>Status</th>
+</tr>
+
+`
+
+data.responses.forEach((r,i)=>{
+
+if(!r)return
+
+let status=r.selected==r.correct?"Correct":"Incorrect"
+
+html+=`
+
+<tr>
+
+<td>${i+1}</td>
+<td>${r.subject}</td>
+<td>${r.topic}</td>
+<td>${r.difficulty}</td>
+<td>${r.time}s</td>
+<td>${status}</td>
+
+</tr>
+
+`
+
+})
+
+html+=`
+
+</table>
+
+</div>
+
+`
+
+document.getElementById("report").innerHTML=html
+
+
+new Chart(
+
+document.getElementById("scoreChart"),
+
+{
+
+type:"pie",
+
+data:{
+
+labels:["Correct","Incorrect"],
+
+datasets:[{
+
+data:[correct,incorrect]
+
+}]
+
+}
+
+})
+
+}
+
+</script>
+
+</body>
+
+</html>
