@@ -600,7 +600,415 @@ new Chart(
 )
 
   }
-  
+/* ===========================
+PART 7 — ATTEMPT QUALITY
+=========================== */
+
+function generateAttemptQuality(data){
+
+let perfect=0
+let overtime=0
+let confused=0
+
+if(data.responses){
+
+    data.responses.forEach(r=>{
+
+        if(!r) return
+
+        if(r.selected==r.correct && r.time<90){
+
+            perfect++
+
+        }
+        else if(r.time>120){
+
+            overtime++
+
+        }
+        else{
+
+            confused++
+
+        }
+
+    })
+
+}
+
+let html = `
+<div class="section">
+
+    <h2>Attempt Quality</h2>
+
+    <canvas id="attemptChart"></canvas>
+
+</div>
+`
+
+document.getElementById("attemptQuality").innerHTML = html
+
+
+new Chart(
+
+    document.getElementById("attemptChart"),
+
+    {
+        type:"pie",
+        data:{
+            labels:[
+                "Perfect Attempt",
+                "Overtime Attempt",
+                "Confused Attempt"
+            ],
+            datasets:[{
+                data:[
+                    perfect,
+                    overtime,
+                    confused
+                ]
+            }]
+        }
+    }
+
+)
+
+    }  
+/* ===========================
+PART 8 — PAINFUL QUESTIONS
+=========================== */
+
+function generatePainfulQuestions(data){
+
+let painful=[]
+
+if(data.responses){
+
+    data.responses.forEach((r,i)=>{
+
+        if(!r) return
+
+        if(r.time>120 && r.selected!=r.correct){
+
+            painful.push(i+1)
+
+        }
+
+    })
+
+}
+
+let list = painful.length ? painful.join(", ") : "None"
+
+let html = `
+<div class="section">
+
+    <h2>Painful Questions</h2>
+
+    <p>
+    Questions where you spent too much time but answered incorrectly.
+    </p>
+
+    <div class="card">
+
+        ${list}
+
+    </div>
+
+</div>
+`
+
+document.getElementById("painfulQuestions").innerHTML = html
+
+          } 
+/* ===========================
+PART 9 — MISSED CONCEPTS
+=========================== */
+
+function generateMissedConcepts(data){
+
+let topics={}
+
+if(data.responses){
+
+    data.responses.forEach(r=>{
+
+        if(!r) return
+
+        if(r.selected!=r.correct){
+
+            let t=r.topic || "Unknown"
+
+            if(!topics[t]){
+                topics[t]=0
+            }
+
+            topics[t]++
+
+        }
+
+    })
+
+}
+
+let html=`
+<div class="section">
+
+    <h2>Missed Concepts</h2>
+
+    <table>
+
+    <tr>
+    <th>Topic</th>
+    <th>Mistakes</th>
+    </tr>
+`
+
+Object.keys(topics).forEach(t=>{
+
+    html+=`
+    <tr>
+    <td>${t}</td>
+    <td>${topics[t]}</td>
+    </tr>
+    `
+
+})
+
+html+=`
+    </table>
+</div>
+`
+
+document.getElementById("missedConcepts").innerHTML=html
+
+          } 
+/* ===========================
+PART 10 — QUESTION HEATMAP
+=========================== */
+
+function generateHeatmap(data){
+
+let html=`
+<div class="section">
+
+    <h2>Question Heatmap</h2>
+
+    <div style="
+    display:grid;
+    grid-template-columns:repeat(10,1fr);
+    gap:8px;
+    ">
+`
+
+if(data.responses){
+
+    data.responses.forEach((r,i)=>{
+
+        let color="#ccc"
+
+        if(r){
+
+            if(r.selected==r.correct){
+                color="#4CAF50"
+            }
+            else if(r.time>120){
+                color="#FF9800"
+            }
+            else{
+                color="#F44336"
+            }
+
+        }
+
+        html+=`
+        <div style="
+        padding:12px;
+        text-align:center;
+        border-radius:6px;
+        color:white;
+        background:${color};
+        ">
+        ${i+1}
+        </div>
+        `
+
+    })
+
+}
+
+html+=`
+    </div>
+</div>
+`
+
+document.getElementById("heatmap").innerHTML=html
+
+} 
+/* ===========================
+PART 11 — SUBJECT SWITCHING
+=========================== */
+
+function generateSubjectMovement(data){
+
+let movement=[]
+let lastSubject=null
+
+if(data.responses){
+
+    data.responses.forEach(r=>{
+
+        if(!r) return
+
+        if(lastSubject && lastSubject!=r.subject){
+
+            movement.push(lastSubject+" → "+r.subject)
+
+        }
+
+        lastSubject=r.subject
+
+    })
+
+}
+
+let list = movement.length ? movement.join("<br>") : "No subject switching detected"
+
+let html=`
+<div class="section">
+
+    <h2>Subject Switching</h2>
+
+    <div class="card">
+
+    ${list}
+
+    </div>
+
+</div>
+`
+
+document.getElementById("subjectMovement").innerHTML=html
+
+}
+/* ===========================
+PART 12 — WEAK TOPICS
+=========================== */
+
+function generateWeakTopics(data){
+
+let weak={}
+
+if(data.responses){
+
+    data.responses.forEach(r=>{
+
+        if(!r) return
+
+        if(r.selected!=r.correct){
+
+            let topic=r.topic || "Unknown"
+
+            if(!weak[topic]){
+                weak[topic]=0
+            }
+
+            weak[topic]++
+
+        }
+
+    })
+
+}
+
+let html=`
+<div class="section">
+
+    <h2>Weak Topics</h2>
+
+    <table>
+
+    <tr>
+    <th>Topic</th>
+    <th>Mistakes</th>
+    </tr>
+`
+
+Object.keys(weak).forEach(t=>{
+
+    html+=`
+    <tr>
+    <td>${t}</td>
+    <td>${weak[t]}</td>
+    </tr>
+    `
+
+})
+
+html+=`
+    </table>
+</div>
+`
+
+document.getElementById("weakTopics").innerHTML=html
+
+}
+/* ===========================
+PART 13 — QUESTION TABLE
+=========================== */
+
+function generateQuestionTable(data){
+
+let html=`
+<div class="section">
+
+    <h2>Complete Question Analysis</h2>
+
+    <table>
+
+    <tr>
+    <th>Q</th>
+    <th>Subject</th>
+    <th>Topic</th>
+    <th>Difficulty</th>
+    <th>Time</th>
+    <th>Status</th>
+    </tr>
+`
+
+if(data.responses){
+
+    data.responses.forEach((r,i)=>{
+
+        if(!r) return
+
+        let status = r.selected==r.correct ? "Correct" : "Incorrect"
+
+        html+=`
+        <tr>
+
+        <td>${i+1}</td>
+        <td>${r.subject}</td>
+        <td>${r.topic}</td>
+        <td>${r.difficulty}</td>
+        <td>${r.time}s</td>
+        <td>${status}</td>
+
+        </tr>
+        `
+
+    })
+
+}
+
+html+=`
+    </table>
+</div>
+`
+
+document.getElementById("questionTable").innerHTML=html
+
+          }  
 generateOverview(data)
 
 generateSubjectAnalysis(data)
