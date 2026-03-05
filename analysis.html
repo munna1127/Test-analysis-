@@ -173,7 +173,121 @@ let html = `
 document.getElementById("overview").innerHTML = html
 
   }
+/* ===========================
+PART 2 — SUBJECT ANALYSIS
+=========================== */
 
+function generateSubjectAnalysis(data){
+
+let subjects = {
+    Physics:{correct:0,incorrect:0,attempt:0},
+    Chemistry:{correct:0,incorrect:0,attempt:0},
+    Maths:{correct:0,incorrect:0,attempt:0}
+}
+
+if(data.responses){
+
+    data.responses.forEach(r=>{
+
+        if(!r) return
+
+        let sub = r.subject
+
+        subjects[sub].attempt++
+
+        if(r.selected == r.correct){
+            subjects[sub].correct++
+        }else{
+            subjects[sub].incorrect++
+        }
+
+    })
+
+}
+
+let physicsAcc = subjects.Physics.attempt ? 
+    Math.round(subjects.Physics.correct / subjects.Physics.attempt * 100) : 0
+
+let chemAcc = subjects.Chemistry.attempt ? 
+    Math.round(subjects.Chemistry.correct / subjects.Chemistry.attempt * 100) : 0
+
+let mathsAcc = subjects.Maths.attempt ? 
+    Math.round(subjects.Maths.correct / subjects.Maths.attempt * 100) : 0
+
+
+let html = `
+<div class="section">
+
+    <h2>Subject Analysis</h2>
+
+    <table>
+
+        <tr>
+            <th>Subject</th>
+            <th>Attempted</th>
+            <th>Correct</th>
+            <th>Incorrect</th>
+            <th>Accuracy</th>
+        </tr>
+
+        <tr>
+            <td>Physics</td>
+            <td>${subjects.Physics.attempt}</td>
+            <td>${subjects.Physics.correct}</td>
+            <td>${subjects.Physics.incorrect}</td>
+            <td>${physicsAcc}%</td>
+        </tr>
+
+        <tr>
+            <td>Chemistry</td>
+            <td>${subjects.Chemistry.attempt}</td>
+            <td>${subjects.Chemistry.correct}</td>
+            <td>${subjects.Chemistry.incorrect}</td>
+            <td>${chemAcc}%</td>
+        </tr>
+
+        <tr>
+            <td>Maths</td>
+            <td>${subjects.Maths.attempt}</td>
+            <td>${subjects.Maths.correct}</td>
+            <td>${subjects.Maths.incorrect}</td>
+            <td>${mathsAcc}%</td>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <canvas id="subjectChart"></canvas>
+
+</div>
+`
+
+document.getElementById("subjectAnalysis").innerHTML = html
+
+
+new Chart(
+
+    document.getElementById("subjectChart"),
+
+    {
+        type:"bar",
+        data:{
+            labels:["Physics","Chemistry","Maths"],
+            datasets:[{
+                label:"Correct Answers",
+                data:[
+                    subjects.Physics.correct,
+                    subjects.Chemistry.correct,
+                    subjects.Maths.correct
+                ]
+            }]
+        }
+    }
+
+)
+
+    }
 generateOverview(data)
 
 generateSubjectAnalysis(data)
