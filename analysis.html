@@ -1,4 +1,12 @@
-<!DOCTYPE html><html><head><title>Mathongo Style JEE Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Mathongo Style JEE Report</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
 
 body{
 font-family:Arial;
@@ -51,7 +59,33 @@ border-bottom:1px solid #eee;
 text-align:center;
 }
 
-</style></head><body><h1>JEE Test Detailed Analysis</h1><input type="file" id="fileInput"><div id="overview"></div><div id="subjectAnalysis"></div><div id="accuracyGraph"></div><div id="difficultyAnalysis"></div><div id="timePerQuestion"></div><div id="timelineAnalysis"></div><div id="attemptQuality"></div><div id="painfulQuestions"></div><div id="missedConcepts"></div><div id="heatmap"></div><div id="subjectMovement"></div><div id="weakTopics"></div><div id="questionTable"></div><div id="performanceSummary"></div><script>
+</style>
+</head>
+
+
+<body>
+
+<h1>JEE Test Detailed Analysis</h1>
+
+<input type="file" id="fileInput">
+
+<div id="overview"></div>
+<div id="subjectAnalysis"></div>
+<div id="accuracyGraph"></div>
+<div id="difficultyAnalysis"></div>
+<div id="timePerQuestion"></div>
+<div id="timelineAnalysis"></div>
+<div id="attemptQuality"></div>
+<div id="painfulQuestions"></div>
+<div id="missedConcepts"></div>
+<div id="heatmap"></div>
+<div id="subjectMovement"></div>
+<div id="weakTopics"></div>
+<div id="questionTable"></div>
+<div id="performanceSummary"></div>
+
+
+<script>
 
 document.getElementById("fileInput").addEventListener("change",function(){
 
@@ -71,1043 +105,400 @@ reader.readAsText(this.files[0])
 
 
 function startAnalysis(data){
-  /* ===========================
-PART 1 — OVERVIEW ENGINE
+
+let responses = data.responses || []
+
+
+/* ===========================
+OVERVIEW
 =========================== */
 
-function generateOverview(data){
+function generateOverview(){
 
 let correct = data.correct || 0
 let incorrect = data.incorrect || 0
 let attempted = data.attempted || 0
-let total = data.responses ? data.responses.length : 0
+let total = responses.length
 
 let score = correct*4 - incorrect
 let accuracy = attempted ? Math.round(correct/attempted*100) : 0
 let unattempted = total - attempted
 
-// time calculation
 let totalTime = 0
-if(data.responses){
-    data.responses.forEach(r=>{
-        if(!r) return
-        totalTime += r.time || 0
-    })
-}
+
+responses.forEach(r=>{
+if(!r) return
+totalTime += r.time || 0
+})
 
 let avgTime = attempted ? Math.round(totalTime/attempted) : 0
 
-// subject attempts
 let physicsAttempt=0
 let chemistryAttempt=0
 let mathsAttempt=0
 
-if(data.responses){
-    data.responses.forEach(r=>{
-        if(!r) return
+responses.forEach(r=>{
+if(!r) return
 
-        if(r.subject==="Physics") physicsAttempt++
-        if(r.subject==="Chemistry") chemistryAttempt++
-        if(r.subject==="Maths") mathsAttempt++
-    })
-}
+if(r.subject==="Physics") physicsAttempt++
+if(r.subject==="Chemistry") chemistryAttempt++
+if(r.subject==="Maths") mathsAttempt++
+})
 
-let html = `
+document.getElementById("overview").innerHTML = `
 <div class="section">
 
-    <h2>Overview</h2>
+<h2>Overview</h2>
 
-    <div class="grid">
+<div class="grid">
 
-        <div class="card">
-            Score
-            <div class="big">${score}</div>
-        </div>
+<div class="card">
+Score
+<div class="big">${score}</div>
+</div>
 
-        <div class="card">
-            Accuracy
-            <div class="big">${accuracy}%</div>
-        </div>
+<div class="card">
+Accuracy
+<div class="big">${accuracy}%</div>
+</div>
 
-        <div class="card">
-            Attempted
-            <div class="big">${attempted}</div>
-        </div>
+<div class="card">
+Attempted
+<div class="big">${attempted}</div>
+</div>
 
-        <div class="card">
-            Unattempted
-            <div class="big">${unattempted}</div>
-        </div>
+<div class="card">
+Unattempted
+<div class="big">${unattempted}</div>
+</div>
 
-    </div>
+</div>
 
-    <br>
+<br>
 
-    <div class="grid">
+<div class="grid">
 
-        <div class="card">
-            Avg Time / Question
-            <div class="big">${avgTime}s</div>
-        </div>
+<div class="card">
+Avg Time / Question
+<div class="big">${avgTime}s</div>
+</div>
 
-        <div class="card">
-            Physics Attempts
-            <div class="big">${physicsAttempt}</div>
-        </div>
+<div class="card">
+Physics Attempts
+<div class="big">${physicsAttempt}</div>
+</div>
 
-        <div class="card">
-            Chemistry Attempts
-            <div class="big">${chemistryAttempt}</div>
-        </div>
+<div class="card">
+Chemistry Attempts
+<div class="big">${chemistryAttempt}</div>
+</div>
 
-        <div class="card">
-            Maths Attempts
-            <div class="big">${mathsAttempt}</div>
-        </div>
+<div class="card">
+Maths Attempts
+<div class="big">${mathsAttempt}</div>
+</div>
 
-    </div>
+</div>
 
 </div>
 `
 
-document.getElementById("overview").innerHTML = html
+}
 
-  }
+
+
 /* ===========================
-PART 2 — SUBJECT ANALYSIS
+SUBJECT ANALYSIS
 =========================== */
 
-function generateSubjectAnalysis(data){
+function generateSubjectAnalysis(){
 
 let subjects = {
-    Physics:{correct:0,incorrect:0,attempt:0},
-    Chemistry:{correct:0,incorrect:0,attempt:0},
-    Maths:{correct:0,incorrect:0,attempt:0}
+Physics:{correct:0,incorrect:0,attempt:0},
+Chemistry:{correct:0,incorrect:0,attempt:0},
+Maths:{correct:0,incorrect:0,attempt:0}
 }
 
-if(data.responses){
+responses.forEach(r=>{
 
-    data.responses.forEach(r=>{
+if(!r || !subjects[r.subject]) return
 
-        if(!r) return
+subjects[r.subject].attempt++
 
-        let sub = r.subject
-
-        subjects[sub].attempt++
-
-        if(r.selected == r.correct){
-            subjects[sub].correct++
-        }else{
-            subjects[sub].incorrect++
-        }
-
-    })
-
+if(r.selected === r.correct){
+subjects[r.subject].correct++
+}else{
+subjects[r.subject].incorrect++
 }
 
-let physicsAcc = subjects.Physics.attempt ? 
-    Math.round(subjects.Physics.correct / subjects.Physics.attempt * 100) : 0
+})
 
-let chemAcc = subjects.Chemistry.attempt ? 
-    Math.round(subjects.Chemistry.correct / subjects.Chemistry.attempt * 100) : 0
-
-let mathsAcc = subjects.Maths.attempt ? 
-    Math.round(subjects.Maths.correct / subjects.Maths.attempt * 100) : 0
-
-
-let html = `
+document.getElementById("subjectAnalysis").innerHTML=`
 <div class="section">
 
-    <h2>Subject Analysis</h2>
+<h2>Subject Analysis</h2>
 
-    <table>
+<table>
 
-        <tr>
-            <th>Subject</th>
-            <th>Attempted</th>
-            <th>Correct</th>
-            <th>Incorrect</th>
-            <th>Accuracy</th>
-        </tr>
+<tr>
+<th>Subject</th>
+<th>Attempted</th>
+<th>Correct</th>
+<th>Incorrect</th>
+</tr>
 
-        <tr>
-            <td>Physics</td>
-            <td>${subjects.Physics.attempt}</td>
-            <td>${subjects.Physics.correct}</td>
-            <td>${subjects.Physics.incorrect}</td>
-            <td>${physicsAcc}%</td>
-        </tr>
+<tr>
+<td>Physics</td>
+<td>${subjects.Physics.attempt}</td>
+<td>${subjects.Physics.correct}</td>
+<td>${subjects.Physics.incorrect}</td>
+</tr>
 
-        <tr>
-            <td>Chemistry</td>
-            <td>${subjects.Chemistry.attempt}</td>
-            <td>${subjects.Chemistry.correct}</td>
-            <td>${subjects.Chemistry.incorrect}</td>
-            <td>${chemAcc}%</td>
-        </tr>
+<tr>
+<td>Chemistry</td>
+<td>${subjects.Chemistry.attempt}</td>
+<td>${subjects.Chemistry.correct}</td>
+<td>${subjects.Chemistry.incorrect}</td>
+</tr>
 
-        <tr>
-            <td>Maths</td>
-            <td>${subjects.Maths.attempt}</td>
-            <td>${subjects.Maths.correct}</td>
-            <td>${subjects.Maths.incorrect}</td>
-            <td>${mathsAcc}%</td>
-        </tr>
+<tr>
+<td>Maths</td>
+<td>${subjects.Maths.attempt}</td>
+<td>${subjects.Maths.correct}</td>
+<td>${subjects.Maths.incorrect}</td>
+</tr>
 
-    </table>
+</table>
 
-    <br>
+<br>
 
-    <canvas id="subjectChart"></canvas>
+<canvas id="subjectChart"></canvas>
 
 </div>
 `
 
-document.getElementById("subjectAnalysis").innerHTML = html
-
-
 new Chart(
+document.getElementById("subjectChart"),
+{
+type:"bar",
+data:{
+labels:["Physics","Chemistry","Maths"],
+datasets:[{
+label:"Correct",
+data:[
+subjects.Physics.correct,
+subjects.Chemistry.correct,
+subjects.Maths.correct
+]
+}]
+}
+})
 
-    document.getElementById("subjectChart"),
+}
 
-    {
-        type:"bar",
-        data:{
-            labels:["Physics","Chemistry","Maths"],
-            datasets:[{
-                label:"Correct Answers",
-                data:[
-                    subjects.Physics.correct,
-                    subjects.Chemistry.correct,
-                    subjects.Maths.correct
-                ]
-            }]
-        }
-    }
 
-)
 
-    }
 /* ===========================
-PART 3 — ACCURACY ANALYTICS
+TIME PER QUESTION
 =========================== */
 
-function generateAccuracyGraph(data){
+function generateTimePerQuestion(){
 
-let correct = data.correct || 0
-let incorrect = data.incorrect || 0
-let attempted = data.attempted || 0
-let total = data.responses ? data.responses.length : 0
+let labels=[]
+let timeData=[]
 
-let unattempted = total - attempted
+responses.forEach((r,i)=>{
+if(!r) return
 
-let accuracy = attempted ? Math.round(correct/attempted*100) : 0
+labels.push("Q"+(i+1))
+timeData.push(r.time || 0)
+})
 
+document.getElementById("timePerQuestion").innerHTML=`
 
-let html = `
 <div class="section">
 
-    <h2>Accuracy Analysis</h2>
+<h2>Time Per Question</h2>
 
-    <table>
-
-        <tr>
-            <th>Total Questions</th>
-            <th>Attempted</th>
-            <th>Correct</th>
-            <th>Incorrect</th>
-            <th>Unattempted</th>
-            <th>Accuracy</th>
-        </tr>
-
-        <tr>
-            <td>${total}</td>
-            <td>${attempted}</td>
-            <td>${correct}</td>
-            <td>${incorrect}</td>
-            <td>${unattempted}</td>
-            <td>${accuracy}%</td>
-        </tr>
-
-    </table>
-
-    <br>
-
-    <canvas id="accuracyPie"></canvas>
+<canvas id="timeChart"></canvas>
 
 </div>
 `
 
-document.getElementById("accuracyGraph").innerHTML = html
-
-
 new Chart(
-
-    document.getElementById("accuracyPie"),
-
-    {
-        type:"pie",
-        data:{
-            labels:["Correct","Incorrect","Unattempted"],
-            datasets:[{
-                data:[correct,incorrect,unattempted]
-            }]
-        }
-    }
-
-)
-
-  } 
-/* ===========================
-PART 4 — DIFFICULTY ANALYSIS
-=========================== */
-
-function generateDifficultyAnalysis(data){
-
-let difficulty = {
-    Easy:{total:0,correct:0},
-    Moderate:{total:0,correct:0},
-    Hard:{total:0,correct:0}
+document.getElementById("timeChart"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Time (sec)",
+data:timeData
+}]
 }
-
-if(data.responses){
-
-    data.responses.forEach(r=>{
-
-        if(!r) return
-
-        let d = r.difficulty || "Easy"
-
-        difficulty[d].total++
-
-        if(r.selected == r.correct){
-            difficulty[d].correct++
-        }
-
-    })
+})
 
 }
 
-let easyAcc = difficulty.Easy.total ?
-    Math.round(difficulty.Easy.correct / difficulty.Easy.total * 100) : 0
-
-let modAcc = difficulty.Moderate.total ?
-    Math.round(difficulty.Moderate.correct / difficulty.Moderate.total * 100) : 0
-
-let hardAcc = difficulty.Hard.total ?
-    Math.round(difficulty.Hard.correct / difficulty.Hard.total * 100) : 0
 
 
-let html = `
-<div class="section">
-
-    <h2>Difficulty Analysis</h2>
-
-    <table>
-
-        <tr>
-            <th>Difficulty</th>
-            <th>Total Questions</th>
-            <th>Correct</th>
-            <th>Accuracy</th>
-        </tr>
-
-        <tr>
-            <td>Easy</td>
-            <td>${difficulty.Easy.total}</td>
-            <td>${difficulty.Easy.correct}</td>
-            <td>${easyAcc}%</td>
-        </tr>
-
-        <tr>
-            <td>Moderate</td>
-            <td>${difficulty.Moderate.total}</td>
-            <td>${difficulty.Moderate.correct}</td>
-            <td>${modAcc}%</td>
-        </tr>
-
-        <tr>
-            <td>Hard</td>
-            <td>${difficulty.Hard.total}</td>
-            <td>${difficulty.Hard.correct}</td>
-            <td>${hardAcc}%</td>
-        </tr>
-
-    </table>
-
-    <br>
-
-    <canvas id="difficultyChart"></canvas>
-
-</div>
-`
-
-document.getElementById("difficultyAnalysis").innerHTML = html
-
-
-new Chart(
-
-    document.getElementById("difficultyChart"),
-
-    {
-        type:"bar",
-        data:{
-            labels:["Easy","Moderate","Hard"],
-            datasets:[{
-                label:"Correct Questions",
-                data:[
-                    difficulty.Easy.correct,
-                    difficulty.Moderate.correct,
-                    difficulty.Hard.correct
-                ]
-            }]
-        }
-    }
-
-)
-
-      }  
 /* ===========================
-PART 5 — TIME PER QUESTION
+TIMELINE
 =========================== */
 
-function generateTimePerQuestion(data){
-
-let timeData = []
-let labels = []
-let totalTime = 0
-let count = 0
-
-if(data.responses){
-
-    data.responses.forEach((r,i)=>{
-
-        if(!r) return
-
-        let t = r.time || 0
-
-        timeData.push(t)
-        labels.push("Q"+(i+1))
-
-        totalTime += t
-        count++
-
-    })
-
-}
-
-let avgTime = count ? Math.round(totalTime/count) : 0
-
-let html = `
-<div class="section">
-
-    <h2>Time Per Question</h2>
-
-    <div class="card">
-        Average Time
-        <div class="big">${avgTime}s</div>
-    </div>
-
-    <br>
-
-    <canvas id="timeChart"></canvas>
-
-</div>
-`
-
-document.getElementById("timePerQuestion").innerHTML = html
-
-
-new Chart(
-
-    document.getElementById("timeChart"),
-
-    {
-        type:"line",
-        data:{
-            labels:labels,
-            datasets:[{
-                label:"Time (seconds)",
-                data:timeData
-            }]
-        }
-    }
-
-)
-
-  }
-/* ===========================
-PART 6 — TIMELINE ANALYSIS
-=========================== */
-
-function generateTimeline(data){
+function generateTimeline(){
 
 let blocks=[0,0,0,0,0,0]
 
-if(data.responses){
+let total = responses.length || 1
 
-    let total = data.responses.length
+responses.forEach((r,i)=>{
 
-    data.responses.forEach((r,i)=>{
+if(!r) return
 
-        if(!r) return
+let block = Math.floor(i/(total/6))
 
-        let block = Math.floor(i/(total/6))
+if(block>5) block=5
 
-        if(block<6){
-            blocks[block]++
-        }
-
-    })
-
-}
-
-let html = `
-<div class="section">
-
-    <h2>Timeline Analysis</h2>
-
-    <canvas id="timelineChart"></canvas>
-
-</div>
-`
-
-document.getElementById("timelineAnalysis").innerHTML = html
-
-
-new Chart(
-
-    document.getElementById("timelineChart"),
-
-    {
-        type:"bar",
-        data:{
-            labels:[
-                "0-30 min",
-                "30-60 min",
-                "60-90 min",
-                "90-120 min",
-                "120-150 min",
-                "150-180 min"
-            ],
-            datasets:[{
-                label:"Questions Attempted",
-                data:blocks
-            }]
-        }
-    }
-
-)
-
-  }
-/* ===========================
-PART 7 — ATTEMPT QUALITY
-=========================== */
-
-function generateAttemptQuality(data){
-
-let perfect=0
-let overtime=0
-let confused=0
-
-if(data.responses){
-
-    data.responses.forEach(r=>{
-
-        if(!r) return
-
-        if(r.selected==r.correct && r.time<90){
-
-            perfect++
-
-        }
-        else if(r.time>120){
-
-            overtime++
-
-        }
-        else{
-
-            confused++
-
-        }
-
-    })
-
-}
-
-let html = `
-<div class="section">
-
-    <h2>Attempt Quality</h2>
-
-    <canvas id="attemptChart"></canvas>
-
-</div>
-`
-
-document.getElementById("attemptQuality").innerHTML = html
-
-
-new Chart(
-
-    document.getElementById("attemptChart"),
-
-    {
-        type:"pie",
-        data:{
-            labels:[
-                "Perfect Attempt",
-                "Overtime Attempt",
-                "Confused Attempt"
-            ],
-            datasets:[{
-                data:[
-                    perfect,
-                    overtime,
-                    confused
-                ]
-            }]
-        }
-    }
-
-)
-
-    }  
-/* ===========================
-PART 8 — PAINFUL QUESTIONS
-=========================== */
-
-function generatePainfulQuestions(data){
-
-let painful=[]
-
-if(data.responses){
-
-    data.responses.forEach((r,i)=>{
-
-        if(!r) return
-
-        if(r.time>120 && r.selected!=r.correct){
-
-            painful.push(i+1)
-
-        }
-
-    })
-
-}
-
-let list = painful.length ? painful.join(", ") : "None"
-
-let html = `
-<div class="section">
-
-    <h2>Painful Questions</h2>
-
-    <p>
-    Questions where you spent too much time but answered incorrectly.
-    </p>
-
-    <div class="card">
-
-        ${list}
-
-    </div>
-
-</div>
-`
-
-document.getElementById("painfulQuestions").innerHTML = html
-
-          } 
-/* ===========================
-PART 9 — MISSED CONCEPTS
-=========================== */
-
-function generateMissedConcepts(data){
-
-let topics={}
-
-if(data.responses){
-
-    data.responses.forEach(r=>{
-
-        if(!r) return
-
-        if(r.selected!=r.correct){
-
-            let t=r.topic || "Unknown"
-
-            if(!topics[t]){
-                topics[t]=0
-            }
-
-            topics[t]++
-
-        }
-
-    })
-
-}
-
-let html=`
-<div class="section">
-
-    <h2>Missed Concepts</h2>
-
-    <table>
-
-    <tr>
-    <th>Topic</th>
-    <th>Mistakes</th>
-    </tr>
-`
-
-Object.keys(topics).forEach(t=>{
-
-    html+=`
-    <tr>
-    <td>${t}</td>
-    <td>${topics[t]}</td>
-    </tr>
-    `
+blocks[block]++
 
 })
 
-html+=`
-    </table>
+document.getElementById("timelineAnalysis").innerHTML=`
+
+<div class="section">
+
+<h2>Timeline Analysis</h2>
+
+<canvas id="timelineChart"></canvas>
+
 </div>
 `
 
-document.getElementById("missedConcepts").innerHTML=html
+new Chart(
+document.getElementById("timelineChart"),
+{
+type:"bar",
+data:{
+labels:[
+"0-30",
+"30-60",
+"60-90",
+"90-120",
+"120-150",
+"150-180"
+],
+datasets:[{
+label:"Attempts",
+data:blocks
+}]
+}
+})
 
-          } 
+}
+
+
+
 /* ===========================
-PART 10 — QUESTION HEATMAP
+HEATMAP
 =========================== */
 
-function generateHeatmap(data){
+function generateHeatmap(){
 
 let html=`
 <div class="section">
-
-    <h2>Question Heatmap</h2>
-
-    <div style="
-    display:grid;
-    grid-template-columns:repeat(10,1fr);
-    gap:8px;
-    ">
+<h2>Question Heatmap</h2>
+<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px;">
 `
 
-if(data.responses){
+responses.forEach((r,i)=>{
 
-    data.responses.forEach((r,i)=>{
+let color="#ccc"
 
-        let color="#ccc"
+if(r){
 
-        if(r){
-
-            if(r.selected==r.correct){
-                color="#4CAF50"
-            }
-            else if(r.time>120){
-                color="#FF9800"
-            }
-            else{
-                color="#F44336"
-            }
-
-        }
-
-        html+=`
-        <div style="
-        padding:12px;
-        text-align:center;
-        border-radius:6px;
-        color:white;
-        background:${color};
-        ">
-        ${i+1}
-        </div>
-        `
-
-    })
+if(r.selected===r.correct){
+color="#4CAF50"
+}
+else{
+color="#F44336"
+}
 
 }
 
 html+=`
-    </div>
+<div style="
+padding:12px;
+text-align:center;
+border-radius:6px;
+color:white;
+background:${color};
+">
+${i+1}
 </div>
 `
+
+})
+
+html+=`</div></div>`
 
 document.getElementById("heatmap").innerHTML=html
 
-} 
+}
+
+
+
 /* ===========================
-PART 11 — SUBJECT SWITCHING
+PERFORMANCE SUMMARY
 =========================== */
 
-function generateSubjectMovement(data){
+function generatePerformanceSummary(){
 
-let movement=[]
-let lastSubject=null
-
-if(data.responses){
-
-    data.responses.forEach(r=>{
-
-        if(!r) return
-
-        if(lastSubject && lastSubject!=r.subject){
-
-            movement.push(lastSubject+" → "+r.subject)
-
-        }
-
-        lastSubject=r.subject
-
-    })
-
-}
-
-let list = movement.length ? movement.join("<br>") : "No subject switching detected"
-
-let html=`
-<div class="section">
-
-    <h2>Subject Switching</h2>
-
-    <div class="card">
-
-    ${list}
-
-    </div>
-
-</div>
-`
-
-document.getElementById("subjectMovement").innerHTML=html
-
-}
-/* ===========================
-PART 12 — WEAK TOPICS
-=========================== */
-
-function generateWeakTopics(data){
-
-let weak={}
-
-if(data.responses){
-
-    data.responses.forEach(r=>{
-
-        if(!r) return
-
-        if(r.selected!=r.correct){
-
-            let topic=r.topic || "Unknown"
-
-            if(!weak[topic]){
-                weak[topic]=0
-            }
-
-            weak[topic]++
-
-        }
-
-    })
-
-}
-
-let html=`
-<div class="section">
-
-    <h2>Weak Topics</h2>
-
-    <table>
-
-    <tr>
-    <th>Topic</th>
-    <th>Mistakes</th>
-    </tr>
-`
-
-Object.keys(weak).forEach(t=>{
-
-    html+=`
-    <tr>
-    <td>${t}</td>
-    <td>${weak[t]}</td>
-    </tr>
-    `
-
-})
-
-html+=`
-    </table>
-</div>
-`
-
-document.getElementById("weakTopics").innerHTML=html
-
-}
-/* ===========================
-PART 13 — QUESTION TABLE
-=========================== */
-
-function generateQuestionTable(data){
-
-let html=`
-<div class="section">
-
-    <h2>Complete Question Analysis</h2>
-
-    <table>
-
-    <tr>
-    <th>Q</th>
-    <th>Subject</th>
-    <th>Topic</th>
-    <th>Difficulty</th>
-    <th>Time</th>
-    <th>Status</th>
-    </tr>
-`
-
-if(data.responses){
-
-    data.responses.forEach((r,i)=>{
-
-        if(!r) return
-
-        let status = r.selected==r.correct ? "Correct" : "Incorrect"
-
-        html+=`
-        <tr>
-
-        <td>${i+1}</td>
-        <td>${r.subject}</td>
-        <td>${r.topic}</td>
-        <td>${r.difficulty}</td>
-        <td>${r.time}s</td>
-        <td>${status}</td>
-
-        </tr>
-        `
-
-    })
-
-}
-
-html+=`
-    </table>
-</div>
-`
-
-document.getElementById("questionTable").innerHTML=html
-
-          } 
-/* ===========================
-PART 14 — PERFORMANCE SUMMARY
-=========================== */
-
-function generatePerformanceSummary(data){
-
-let correct=data.correct || 0
-let incorrect=data.incorrect || 0
-let attempted=data.attempted || 0
-
+let correct=data.correct||0
+let incorrect=data.incorrect||0
 let score=correct*4-incorrect
 
-let accuracy = attempted ? Math.round(correct/attempted*100) : 0
+let level="Needs Improvement"
 
-let level=""
-let suggestion=""
+if(score>250) level="Excellent"
+else if(score>200) level="Very Good"
+else if(score>150) level="Good"
 
-if(score>250){
+document.getElementById("performanceSummary").innerHTML=`
 
-    level="Excellent Performance"
-    suggestion="You are performing at top rank level. Maintain consistency."
-
-}
-else if(score>200){
-
-    level="Very Good Performance"
-    suggestion="Focus on reducing silly mistakes to reach top percentile."
-
-}
-else if(score>150){
-
-    level="Good Performance"
-    suggestion="Improve accuracy and time management."
-
-}
-else{
-
-    level="Needs Improvement"
-    suggestion="Focus on concepts and practice more questions."
-
-}
-
-let html=`
 <div class="section">
 
-    <h2>Performance Summary</h2>
+<h2>Performance Summary</h2>
 
-    <div class="card">
+<div class="card">
 
-    <h3>${level}</h3>
+<h3>${level}</h3>
 
-    <p>
+<p>Score : ${score}</p>
 
-    Your score is <b>${score}</b> with accuracy <b>${accuracy}%</b>.
-
-    </p>
-
-    <p>
-
-    ${suggestion}
-
-    </p>
-
-    </div>
+</div>
 
 </div>
 `
 
-document.getElementById("performanceSummary").innerHTML=html
+}
 
-}  
-generateOverview(data)
 
-generateSubjectAnalysis(data)
 
-generateAccuracyGraph(data)
+/* ===========================
+CALL ALL
+=========================== */
 
-generateDifficultyAnalysis(data)
-
-generateTimePerQuestion(data)
-
-generateTimeline(data)
-
-generateAttemptQuality(data)
-
-generatePainfulQuestions(data)
-
-generateMissedConcepts(data)
-
-generateHeatmap(data)
-
-generateSubjectMovement(data)
-
-generateWeakTopics(data)
-
-generateQuestionTable(data)
-
-generatePerformanceSummary(data)
+generateOverview()
+generateSubjectAnalysis()
+generateTimePerQuestion()
+generateTimeline()
+generateHeatmap()
+generatePerformanceSummary()
 
 }
 
-</script></body></html>
+</script>
+
+</body>
+</html>
