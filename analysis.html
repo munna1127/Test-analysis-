@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Test Analysis</title>
+<title>Advanced Test Analysis</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -12,7 +12,7 @@
 body{
 font-family:Arial;
 margin:40px;
-background:#f5f5f5;
+background:#f4f6fa;
 }
 
 .card{
@@ -20,7 +20,7 @@ background:white;
 padding:20px;
 margin-bottom:20px;
 border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
+box-shadow:0 2px 10px rgba(0,0,0,0.08);
 }
 
 .grid{
@@ -30,7 +30,7 @@ gap:20px;
 }
 
 .big{
-font-size:28px;
+font-size:26px;
 font-weight:bold;
 }
 
@@ -41,7 +41,7 @@ border-collapse:collapse;
 
 th,td{
 padding:10px;
-border-bottom:1px solid #ddd;
+border-bottom:1px solid #eee;
 text-align:center;
 }
 
@@ -51,11 +51,12 @@ text-align:center;
 
 <body>
 
-<h1>Test Analysis</h1>
+<h1>JEE Test Analysis</h1>
 
 <input type="file" id="fileInput">
 
 <br><br>
+
 
 <div class="card">
 
@@ -86,37 +87,12 @@ Incorrect
 </div>
 
 
-<div class="card">
-
-<h2>Subject Analysis</h2>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Subject</th>
-<th>Correct</th>
-<th>Incorrect</th>
-<th>Time</th>
-</tr>
-
-</thead>
-
-<tbody id="subjectTable">
-
-</tbody>
-
-</table>
-
-</div>
-
 
 <div class="card">
 
-<h2>Subject Score Chart</h2>
+<h2>Attempt Quality</h2>
 
-<canvas id="subjectChart"></canvas>
+<canvas id="attemptChart"></canvas>
 
 </div>
 
@@ -130,59 +106,44 @@ Incorrect
 </div>
 
 
+
 <div class="card">
 
-<h2>Time Spent per Question</h2>
+<h2>30 Minute Timeline</h2>
 
-<canvas id="timeChart"></canvas>
+<canvas id="timelineChart"></canvas>
 
 </div>
 
 
+
 <div class="card">
 
-<h2>Painful Questions</h2>
+<h2>Missed Concepts</h2>
 
-<div id="painful"></div>
+<div id="missed"></div>
 
 </div>
 
 
+
 <div class="card">
 
-<h2>Question Details</h2>
+<h2>Subject Switching</h2>
 
-<table>
-
-<thead>
-
-<tr>
-<th>Q</th>
-<th>Subject</th>
-<th>Topic</th>
-<th>Difficulty</th>
-<th>Time</th>
-<th>Status</th>
-</tr>
-
-</thead>
-
-<tbody id="questionTable"></tbody>
-
-</table>
+<div id="movement"></div>
 
 </div>
+
 
 
 <script>
 
 document.getElementById("fileInput").addEventListener("change",function(){
 
-let file=this.files[0]
-
 let reader=new FileReader()
 
-reader.onload=function(e){
+reader.onload=(e)=>{
 
 let data=JSON.parse(e.target.result)
 
@@ -190,7 +151,7 @@ analyze(data)
 
 }
 
-reader.readAsText(file)
+reader.readAsText(this.files[0])
 
 })
 
@@ -210,11 +171,10 @@ document.getElementById("attempted").innerText=attempted
 document.getElementById("incorrect").innerText=incorrect
 
 
-let subjects={
-Physics:{correct:0,incorrect:0,time:0},
-Chemistry:{correct:0,incorrect:0,time:0},
-Maths:{correct:0,incorrect:0,time:0}
-}
+
+let perfect=0
+let overtime=0
+let confused=0
 
 let difficulty={
 Easy:0,
@@ -222,92 +182,78 @@ Moderate:0,
 Hard:0
 }
 
-let painful=[]
+let timeline=[0,0,0,0,0,0]
 
-let timeData=[]
-let questionLabels=[]
+let missed=[]
+let movement=[]
 
-let table=""
+let lastSubject=null
+
+
 
 data.responses.forEach((r,i)=>{
 
 if(!r)return
 
-let status="Incorrect"
+if(r.selected==r.correct && r.time<90){
 
-if(r.selected==r.correct){
-
-status="Correct"
-subjects[r.subject].correct++
-
-}else{
-
-subjects[r.subject].incorrect++
+perfect++
 
 }
 
-subjects[r.subject].time+=r.time
+else if(r.time>120){
+
+overtime++
+
+}
+
+else{
+
+confused++
+
+}
+
+
 
 difficulty[r.difficulty]++
 
-if(r.time>120 && r.selected!=r.correct){
 
-painful.push(i+1)
+
+let block=Math.floor(r.time/30)
+
+if(block<6) timeline[block]++
+
+
+
+if(r.selected!=r.correct){
+
+missed.push(r.topic)
 
 }
 
-timeData.push(r.time)
-questionLabels.push("Q"+(i+1))
 
-table+=`
 
-<tr>
+if(lastSubject && lastSubject!=r.subject){
 
-<td>${i+1}</td>
-<td>${r.subject}</td>
-<td>${r.topic}</td>
-<td>${r.difficulty}</td>
-<td>${r.time}s</td>
-<td>${status}</td>
+movement.push(lastSubject+" → "+r.subject)
 
-</tr>
+}
 
-`
+lastSubject=r.subject
 
 })
 
 
-document.getElementById("questionTable").innerHTML=table
 
+document.getElementById("missed").innerText=[...new Set(missed)].join(", ")
 
-let table2=""
+document.getElementById("movement").innerHTML=movement.join("<br>")
 
-for(let s in subjects){
-
-table2+=`
-
-<tr>
-
-<td>${s}</td>
-<td>${subjects[s].correct}</td>
-<td>${subjects[s].incorrect}</td>
-<td>${subjects[s].time}s</td>
-
-</tr>
-
-`
-
-}
-
-document.getElementById("subjectTable").innerHTML=table2
-
-
-document.getElementById("painful").innerText=painful.join(", ")
 
 
 new Chart(
 
-document.getElementById("subjectChart"),
+document.getElementById("attemptChart"),
 
 {
 
@@ -315,23 +261,18 @@ type:"pie",
 
 data:{
 
-labels:["Physics","Chemistry","Maths"],
+labels:["Perfect","Overtime","Confused"],
 
 datasets:[{
 
-data:[
-
-subjects.Physics.correct,
-subjects.Chemistry.correct,
-subjects.Maths.correct
-
-]
+data:[perfect,overtime,confused]
 
 }]
 
 }
 
 })
+
 
 
 new Chart(
@@ -365,9 +306,10 @@ difficulty.Hard
 })
 
 
+
 new Chart(
 
-document.getElementById("timeChart"),
+document.getElementById("timelineChart"),
 
 {
 
@@ -375,13 +317,13 @@ type:"line",
 
 data:{
 
-labels:questionLabels,
+labels:["0-30","30-60","60-90","90-120","120-150","150-180"],
 
 datasets:[{
 
-label:"Time",
+label:"Attempts",
 
-data:timeData
+data:timeline
 
 }]
 
