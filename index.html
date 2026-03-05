@@ -69,6 +69,7 @@ margin:3px;
 
 <button onclick="prev()">Previous</button>
 <button onclick="next()">Next</button>
+  <button onclick="finishTest()">Submit Test</button>
 
 <h3>Question Palette</h3>
 
@@ -236,3 +237,55 @@ document.getElementById("timer").innerText=m+":"+s
 
 </body>
   </html>
+function finishTest(){
+
+let correct=0
+let incorrect=0
+let attempted=0
+
+responses.forEach(r=>{
+
+if(r){
+
+attempted++
+
+if(r.selected==r.correct){
+
+correct++
+
+}else{
+
+incorrect++
+
+}
+
+}
+
+})
+
+let result={
+
+correct:correct,
+incorrect:incorrect,
+attempted:attempted,
+responses:responses
+
+}
+
+let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(result,null,2))
+
+let downloadAnchor = document.createElement('a')
+
+downloadAnchor.setAttribute("href",dataStr)
+
+downloadAnchor.setAttribute("download","test-result.json")
+
+document.body.appendChild(downloadAnchor)
+
+downloadAnchor.click()
+
+downloadAnchor.remove()
+
+alert("Test submitted and data downloaded!")
+
+}
