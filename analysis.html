@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><title>JEE Advanced Full Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
+<!DOCTYPE html><html><head><title>Mathongo Style JEE Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
 
 body{
 font-family:Arial;
@@ -6,12 +6,16 @@ margin:30px;
 background:#f5f7fb;
 }
 
-.page{
+.section{
 background:white;
 padding:40px;
 margin-bottom:40px;
 border-radius:10px;
 box-shadow:0 3px 12px rgba(0,0,0,0.1);
+}
+
+h2{
+margin-bottom:20px;
 }
 
 .grid{
@@ -28,8 +32,12 @@ border-radius:8px;
 }
 
 .big{
-font-size:30px;
+font-size:28px;
 font-weight:bold;
+}
+
+canvas{
+max-height:350px;
 }
 
 table{
@@ -43,38 +51,7 @@ border-bottom:1px solid #eee;
 text-align:center;
 }
 
-canvas{
-max-height:350px;
-}
-
-#heatmap{
-display:grid;
-grid-template-columns:repeat(10,1fr);
-gap:8px;
-}
-
-.box{
-padding:10px;
-text-align:center;
-border-radius:6px;
-color:white;
-}
-
-button{
-padding:12px 20px;
-margin-top:20px;
-background:#4CAF50;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
-}
-
-</style></head><body><h1>JEE Complete Test Report</h1><input type="file" id="fileInput"><br><br>
-
-<button onclick="window.print()">Download PDF</button>
-
-<div id="report"></div><script>
+</style></head><body><h1>JEE Test Detailed Analysis</h1><input type="file" id="fileInput"><div id="overview"></div><div id="subjectAnalysis"></div><div id="accuracyGraph"></div><div id="difficultyAnalysis"></div><div id="timePerQuestion"></div><div id="timelineAnalysis"></div><div id="attemptQuality"></div><div id="painfulQuestions"></div><div id="missedConcepts"></div><div id="heatmap"></div><div id="subjectMovement"></div><div id="weakTopics"></div><div id="questionTable"></div><div id="performanceSummary"></div><script>
 
 document.getElementById("fileInput").addEventListener("change",function(){
 
@@ -84,7 +61,7 @@ reader.onload=(e)=>{
 
 let data=JSON.parse(e.target.result)
 
-generateReport(data)
+startAnalysis(data)
 
 }
 
@@ -93,298 +70,138 @@ reader.readAsText(this.files[0])
 })
 
 
-function estimatePercentile(score){
+function startAnalysis(data){
+  /* ===========================
+PART 1 — OVERVIEW ENGINE
+=========================== */
 
-if(score>250) return 99.9
-if(score>220) return 99
-if(score>200) return 98
-if(score>180) return 95
-if(score>150) return 90
-if(score>120) return 80
-if(score>100) return 70
-return 50
+function generateOverview(data){
 
+let correct = data.correct || 0
+let incorrect = data.incorrect || 0
+let attempted = data.attempted || 0
+let total = data.responses ? data.responses.length : 0
+
+let score = correct*4 - incorrect
+let accuracy = attempted ? Math.round(correct/attempted*100) : 0
+let unattempted = total - attempted
+
+// time calculation
+let totalTime = 0
+if(data.responses){
+    data.responses.forEach(r=>{
+        if(!r) return
+        totalTime += r.time || 0
+    })
 }
 
+let avgTime = attempted ? Math.round(totalTime/attempted) : 0
 
-function generateReport(data){
+// subject attempts
+let physicsAttempt=0
+let chemistryAttempt=0
+let mathsAttempt=0
 
-let correct=data.correct
-let incorrect=data.incorrect
-let attempted=data.attempted
+if(data.responses){
+    data.responses.forEach(r=>{
+        if(!r) return
 
-let score=correct*4-incorrect
-
-let accuracy=attempted?Math.round(correct/attempted*100):0
-
-let percentile=estimatePercentile(score)
-
-let subjects={
-Physics:{correct:0,incorrect:0},
-Chemistry:{correct:0,incorrect:0},
-Maths:{correct:0,incorrect:0}
+        if(r.subject==="Physics") physicsAttempt++
+        if(r.subject==="Chemistry") chemistryAttempt++
+        if(r.subject==="Maths") mathsAttempt++
+    })
 }
 
-let difficulty={
-Easy:0,
-Moderate:0,
-Hard:0
-}
+let html = `
+<div class="section">
 
-let timeData=[]
-let questionLabels=[]
+    <h2>Overview</h2>
 
-let timeline=[0,0,0,0,0,0]
+    <div class="grid">
 
-let perfect=0
-let overtime=0
-let confused=0
+        <div class="card">
+            Score
+            <div class="big">${score}</div>
+        </div>
 
-let painful=[]
-let missed=[]
-let movement=[]
-let weakTopics={}
+        <div class="card">
+            Accuracy
+            <div class="big">${accuracy}%</div>
+        </div>
 
-let lastSubject=null
+        <div class="card">
+            Attempted
+            <div class="big">${attempted}</div>
+        </div>
 
+        <div class="card">
+            Unattempted
+            <div class="big">${unattempted}</div>
+        </div>
 
-data.responses.forEach((r,i)=>{
+    </div>
 
-if(!r)return
+    <br>
 
-timeData.push(r.time)
-questionLabels.push("Q"+(i+1))
+    <div class="grid">
 
-let block=Math.floor(i/(data.responses.length/6))
-if(block<6) timeline[block]++
+        <div class="card">
+            Avg Time / Question
+            <div class="big">${avgTime}s</div>
+        </div>
 
-if(r.selected==r.correct && r.time<90){
-perfect++
-}else if(r.time>120){
-overtime++
-}else{
-confused++
-}
+        <div class="card">
+            Physics Attempts
+            <div class="big">${physicsAttempt}</div>
+        </div>
 
-difficulty[r.difficulty]++
+        <div class="card">
+            Chemistry Attempts
+            <div class="big">${chemistryAttempt}</div>
+        </div>
 
-if(r.selected==r.correct){
-subjects[r.subject].correct++
-}else{
-subjects[r.subject].incorrect++
-missed.push(r.topic)
+        <div class="card">
+            Maths Attempts
+            <div class="big">${mathsAttempt}</div>
+        </div>
 
-if(!weakTopics[r.topic]) weakTopics[r.topic]=0
-weakTopics[r.topic]++
-}
-
-if(r.time>120 && r.selected!=r.correct){
-painful.push(i+1)
-}
-
-if(lastSubject && lastSubject!==r.subject){
-movement.push(lastSubject+" → "+r.subject)
-}
-
-lastSubject=r.subject
-
-})
-
-
-let summary=""
-
-if(percentile>98){
-summary="Excellent performance. You are likely to secure a top rank."
-}
-else if(percentile>90){
-summary="Very good performance. With slight improvement you can reach top percentile."
-}
-else if(percentile>80){
-summary="Good performance but accuracy and time management need improvement."
-}
-else{
-summary="You need to focus on concepts and reduce mistakes."
-}
-
-
-let html=`
-
-<div class="page">
-
-<h2>Overview</h2>
-
-<div class="grid">
-
-<div class="card">Score<div class="big">${score}</div></div>
-<div class="card">Accuracy<div class="big">${accuracy}%</div></div>
-<div class="card">Attempted<div class="big">${attempted}</div></div>
-<div class="card">Percentile<div class="big">${percentile}</div></div>
+    </div>
 
 </div>
-
-</div>
-
-
-<div class="page">
-
-<h2>Performance Summary</h2>
-
-<p>${summary}</p>
-
-</div>
-
-
-<div class="page">
-
-<h2>Subject Analysis</h2>
-
-<table>
-
-<tr>
-<th>Subject</th>
-<th>Correct</th>
-<th>Incorrect</th>
-</tr>
-
-<tr>
-<td>Physics</td>
-<td>${subjects.Physics.correct}</td>
-<td>${subjects.Physics.incorrect}</td>
-</tr>
-
-<tr>
-<td>Chemistry</td>
-<td>${subjects.Chemistry.correct}</td>
-<td>${subjects.Chemistry.incorrect}</td>
-</tr>
-
-<tr>
-<td>Maths</td>
-<td>${subjects.Maths.correct}</td>
-<td>${subjects.Maths.incorrect}</td>
-</tr>
-
-</table>
-
-</div>
-
-
-<div class="page">
-
-<h2>Correct vs Incorrect</h2>
-
-<canvas id="accuracyChart"></canvas>
-
-</div>
-
-
-<div class="page">
-
-<h2>Difficulty Analysis</h2>
-
-<canvas id="difficultyChart"></canvas>
-
-</div>
-
-
-<div class="page">
-
-<h2>Time per Question</h2>
-
-<canvas id="timeChart"></canvas>
-
-</div>
-
-
-<div class="page">
-
-<h2>Attempt Quality</h2>
-
-<canvas id="attemptChart"></canvas>
-
-</div>
-
-
-<div class="page">
-
-<h2>Question Heatmap</h2>
-
-<div id="heatmap"></div>
-
-</div>
-
 `
 
-document.getElementById("report").innerHTML=html
+document.getElementById("overview").innerHTML = html
 
+  }
 
-let heatmapHTML=""
+generateOverview(data)
 
-data.responses.forEach((r,i)=>{
+generateSubjectAnalysis(data)
 
-if(!r)return
+generateAccuracyGraph(data)
 
-let color="#ccc"
+generateDifficultyAnalysis(data)
 
-if(r.selected==r.correct){
-color="#4CAF50"
-}else if(r.time>120){
-color="#FF9800"
-}else{
-color="#F44336"
-}
+generateTimePerQuestion(data)
 
-heatmapHTML+=`<div class="box" style="background:${color}">${i+1}</div>`
+generateTimeline(data)
 
-})
+generateAttemptQuality(data)
 
-document.getElementById("heatmap").innerHTML=heatmapHTML
+generatePainfulQuestions(data)
 
+generateMissedConcepts(data)
 
-new Chart(document.getElementById("accuracyChart"),{
-type:"pie",
-data:{
-labels:["Correct","Incorrect"],
-datasets:[{data:[correct,incorrect]}]
-}
-})
+generateHeatmap(data)
 
+generateSubjectMovement(data)
 
-new Chart(document.getElementById("difficultyChart"),{
-type:"bar",
-data:{
-labels:["Easy","Moderate","Hard"],
-datasets:[{
-label:"Questions",
-data:[difficulty.Easy,difficulty.Moderate,difficulty.Hard]
-}]
-}
-})
+generateWeakTopics(data)
 
+generateQuestionTable(data)
 
-new Chart(document.getElementById("timeChart"),{
-type:"line",
-data:{
-labels:questionLabels,
-datasets:[{
-label:"Time (seconds)",
-data:timeData
-}]
-}
-})
-
-
-new Chart(document.getElementById("attemptChart"),{
-type:"pie",
-data:{
-labels:["Perfect","Overtime","Confused"],
-datasets:[{
-data:[perfect,overtime,confused]
-}]
-}
-})
+generatePerformanceSummary(data)
 
 }
 
-</script></body>
-</html>
+</script></body></html>
