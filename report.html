@@ -1,42 +1,31 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-
-<title>Full Test Report</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
+<!DOCTYPE html><html><head><title>Full Test Analysis Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
 
 body{
 font-family:Arial;
 margin:40px;
-background:#f5f5f5;
+background:#f4f6fa;
 }
 
 .page{
 background:white;
 padding:40px;
-margin-bottom:40px;
+margin-bottom:50px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
 page-break-after:always;
-}
-
-h1,h2{
-margin-bottom:20px;
-}
-
-.card{
-padding:20px;
-border:1px solid #eee;
-margin-bottom:20px;
-border-radius:8px;
 }
 
 .grid{
 display:grid;
 grid-template-columns:repeat(4,1fr);
 gap:20px;
+}
+
+.card{
+padding:20px;
+border:1px solid #eee;
+border-radius:8px;
+text-align:center;
 }
 
 .big{
@@ -55,20 +44,11 @@ border-bottom:1px solid #ddd;
 text-align:center;
 }
 
-</style>
+canvas{
+max-height:300px;
+}
 
-</head>
-
-<body>
-
-<h1>Full Test Analysis Report</h1>
-
-<input type="file" id="fileInput">
-
-<div id="report"></div>
-
-
-<script>
+</style></head><body><h1>JEE Full Test Analysis</h1><input type="file" id="fileInput"><div id="report"></div><script>
 
 document.getElementById("fileInput").addEventListener("change",function(){
 
@@ -86,7 +66,6 @@ reader.readAsText(this.files[0])
 
 })
 
-
 function generateReport(data){
 
 let correct=data.correct
@@ -95,6 +74,46 @@ let attempted=data.attempted
 
 let score=correct*4 - incorrect
 let accuracy=Math.round((correct/attempted)*100)
+
+let subjects={
+Physics:{correct:0,incorrect:0},
+Chemistry:{correct:0,incorrect:0},
+Maths:{correct:0,incorrect:0}
+}
+
+let difficulty={
+Easy:0,
+Moderate:0,
+Hard:0
+}
+
+let painful=[]
+let missed=[]
+
+data.responses.forEach((r,i)=>{
+
+if(!r)return
+
+if(r.selected==r.correct){
+
+subjects[r.subject].correct++
+
+}else{
+
+subjects[r.subject].incorrect++
+missed.push(r.topic)
+
+}
+
+difficulty[r.difficulty]++
+
+if(r.time>120 && r.selected!=r.correct){
+
+painful.push(i+1)
+
+}
+
+})
 
 let html=`
 
@@ -105,33 +124,10 @@ let html=`
 
 <div class="grid">
 
-<div class="card">
-
-Score
-<div class="big">${score}</div>
-
-</div>
-
-<div class="card">
-
-Accuracy
-<div class="big">${accuracy}%</div>
-
-</div>
-
-<div class="card">
-
-Attempted
-<div class="big">${attempted}</div>
-
-</div>
-
-<div class="card">
-
-Incorrect
-<div class="big">${incorrect}</div>
-
-</div>
+<div class="card">Score<div class="big">${score}</div></div>
+<div class="card">Accuracy<div class="big">${accuracy}%</div></div>
+<div class="card">Attempted<div class="big">${attempted}</div></div>
+<div class="card">Incorrect<div class="big">${incorrect}</div></div>
 
 </div>
 
@@ -141,9 +137,35 @@ Incorrect
 
 <div class="page">
 
-<h2>Graphical Overview</h2>
+<h2>Subject Analysis</h2>
 
-<canvas id="scoreChart"></canvas>
+<table>
+
+<tr>
+<th>Subject</th>
+<th>Correct</th>
+<th>Incorrect</th>
+</tr>
+
+<tr>
+<td>Physics</td>
+<td>${subjects.Physics.correct}</td>
+<td>${subjects.Physics.incorrect}</td>
+</tr>
+
+<tr>
+<td>Chemistry</td>
+<td>${subjects.Chemistry.correct}</td>
+<td>${subjects.Chemistry.incorrect}</td>
+</tr>
+
+<tr>
+<td>Maths</td>
+<td>${subjects.Maths.correct}</td>
+<td>${subjects.Maths.incorrect}</td>
+</tr>
+
+</table>
 
 </div>
 
@@ -151,7 +173,47 @@ Incorrect
 
 <div class="page">
 
-<h2>Question Table</h2>
+<h2>Correct vs Incorrect</h2>
+
+<canvas id="accuracyChart"></canvas>
+
+</div>
+
+
+
+<div class="page">
+
+<h2>Difficulty Distribution</h2>
+
+<canvas id="difficultyChart"></canvas>
+
+</div>
+
+
+
+<div class="page">
+
+<h2>Painful Questions</h2>
+
+${painful.join(", ")}
+
+</div>
+
+
+
+<div class="page">
+
+<h2>Missed Concepts</h2>
+
+${[...new Set(missed)].join(", ")}
+
+</div>
+
+
+
+<div class="page">
+
+<h2>Complete Question Table</h2>
 
 <table>
 
@@ -199,33 +261,39 @@ html+=`
 
 document.getElementById("report").innerHTML=html
 
+new Chart(
+
+document.getElementById("accuracyChart"),
+
+{
+type:"pie",
+data:{
+labels:["Correct","Incorrect"],
+datasets:[{data:[correct,incorrect]}]
+}
+
+})
 
 new Chart(
 
-document.getElementById("scoreChart"),
+document.getElementById("difficultyChart"),
 
 {
-
-type:"pie",
-
+type:"bar",
 data:{
-
-labels:["Correct","Incorrect"],
-
+labels:["Easy","Moderate","Hard"],
 datasets:[{
-
-data:[correct,incorrect]
-
+label:"Questions",
+data:[
+difficulty.Easy,
+difficulty.Moderate,
+difficulty.Hard
+]
 }]
-
 }
 
 })
 
 }
 
-</script>
-
-</body>
-
-</html>
+</script></body></html>
