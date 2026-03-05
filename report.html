@@ -1,4 +1,5 @@
-<!DOCTYPE html><html><head><title>Full Test Analysis Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
+<!DOCTYPE html><html><head>
+<title>Full Test Analysis Report</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>
 
 body{
 font-family:Arial;
@@ -66,6 +67,7 @@ reader.readAsText(this.files[0])
 
 })
 
+
 function generateReport(data){
 
 let correct=data.correct
@@ -90,33 +92,51 @@ Hard:0
 let painful=[]
 let missed=[]
 
+let timeData=[]
+let questionLabels=[]
+
+let timeline=[0,0,0,0,0,0]
+
+let perfect=0
+let overtime=0
+let confused=0
+
+
 data.responses.forEach((r,i)=>{
 
-if(!r)return
+if(!r) return
+
+timeData.push(r.time)
+questionLabels.push("Q"+(i+1))
+
+let block=Math.floor(i/(data.responses.length/6))
+if(block<6) timeline[block]++
+
+if(r.selected==r.correct && r.time<90){
+perfect++
+}else if(r.time>120){
+overtime++
+}else{
+confused++
+}
 
 if(r.selected==r.correct){
-
 subjects[r.subject].correct++
-
 }else{
-
 subjects[r.subject].incorrect++
 missed.push(r.topic)
-
 }
 
 difficulty[r.difficulty]++
 
 if(r.time>120 && r.selected!=r.correct){
-
 painful.push(i+1)
-
 }
 
 })
 
-let html=`
 
+let html=`
 
 <div class="page">
 
@@ -132,7 +152,6 @@ let html=`
 </div>
 
 </div>
-
 
 
 <div class="page">
@@ -170,45 +189,60 @@ let html=`
 </div>
 
 
-
 <div class="page">
 
 <h2>Correct vs Incorrect</h2>
-
 <canvas id="accuracyChart"></canvas>
 
 </div>
 
 
-
 <div class="page">
 
 <h2>Difficulty Distribution</h2>
-
 <canvas id="difficultyChart"></canvas>
 
 </div>
 
 
-
 <div class="page">
 
 <h2>Painful Questions</h2>
-
 ${painful.join(", ")}
 
 </div>
 
 
-
 <div class="page">
 
 <h2>Missed Concepts</h2>
-
 ${[...new Set(missed)].join(", ")}
 
 </div>
 
+
+<div class="page">
+
+<h2>Time Per Question</h2>
+<canvas id="timeChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>30 Minute Timeline</h2>
+<canvas id="timelineChart"></canvas>
+
+</div>
+
+
+<div class="page">
+
+<h2>Attempt Quality</h2>
+<canvas id="attemptChart"></canvas>
+
+</div>
 
 
 <div class="page">
@@ -230,7 +264,7 @@ ${[...new Set(missed)].join(", ")}
 
 data.responses.forEach((r,i)=>{
 
-if(!r)return
+if(!r) return
 
 let status=r.selected==r.correct?"Correct":"Incorrect"
 
@@ -261,23 +295,20 @@ html+=`
 
 document.getElementById("report").innerHTML=html
 
+
 new Chart(
-
 document.getElementById("accuracyChart"),
-
 {
 type:"pie",
 data:{
 labels:["Correct","Incorrect"],
 datasets:[{data:[correct,incorrect]}]
 }
-
 })
 
+
 new Chart(
-
 document.getElementById("difficultyChart"),
-
 {
 type:"bar",
 data:{
@@ -291,9 +322,50 @@ difficulty.Hard
 ]
 }]
 }
+})
 
+
+new Chart(
+document.getElementById("timeChart"),
+{
+type:"line",
+data:{
+labels:questionLabels,
+datasets:[{
+label:"Time (seconds)",
+data:timeData
+}]
+}
+})
+
+
+new Chart(
+document.getElementById("timelineChart"),
+{
+type:"bar",
+data:{
+labels:["0-30","30-60","60-90","90-120","120-150","150-180"],
+datasets:[{
+label:"Attempts",
+data:timeline
+}]
+}
+})
+
+
+new Chart(
+document.getElementById("attemptChart"),
+{
+type:"pie",
+data:{
+labels:["Perfect","Overtime","Confused"],
+datasets:[{
+data:[perfect,overtime,confused]
+}]
+}
 })
 
 }
 
-</script></body></html>
+</script></body>
+  </html>
