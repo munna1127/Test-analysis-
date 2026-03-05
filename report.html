@@ -73,7 +73,7 @@ let incorrect=data.incorrect
 let attempted=data.attempted
 
 let score=correct*4 - incorrect
-let accuracy=Math.round((correct/attempted)*100)
+let accuracy = attempted ? Math.round((correct/attempted)*100) : 0
 
 let subjects={
 Physics:{correct:0,incorrect:0},
