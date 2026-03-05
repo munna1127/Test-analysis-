@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>JEE Test</title>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<head>
+
+<title>JEE Mock Test</title>
 
 <style>
 
@@ -49,6 +49,7 @@ margin:3px;
 
 </head>
 
+
 <body>
 
 <h2>JEE Mock Test</h2>
@@ -69,15 +70,17 @@ margin:3px;
 
 <button onclick="prev()">Previous</button>
 <button onclick="next()">Next</button>
-  <button onclick="finishTest()">Submit Test</button>
+<button onclick="finishTest()">Submit Test</button>
 
 <h3>Question Palette</h3>
 
 <div id="palette"></div>
 
+
 <script>
 
 let questions=[
+
 {
 id:1,
 subject:"Physics",
@@ -111,9 +114,7 @@ answer:1
 ]
 
 let current=0
-
 let responses=[]
-
 let startTime=Date.now()
 
 function loadQuestion(){
@@ -136,7 +137,7 @@ ${o}
 
 document.getElementById("options").innerHTML=optHTML
 
-if(responses[current]!=undefined){
+if(responses[current]){
 
 document.getElementById("opt"+responses[current].selected).classList.add("selected")
 
@@ -171,9 +172,7 @@ function next(){
 if(current<questions.length-1){
 
 current++
-
 startTime=Date.now()
-
 loadQuestion()
 
 }
@@ -185,9 +184,7 @@ function prev(){
 if(current>0){
 
 current--
-
 startTime=Date.now()
-
 loadQuestion()
 
 }
@@ -215,28 +212,6 @@ loadQuestion()
 
 }
 
-loadQuestion()
-buildPalette()
-
-// timer
-
-let time=180*60
-
-setInterval(()=>{
-
-time--
-
-let m=Math.floor(time/60)
-let s=time%60
-
-document.getElementById("timer").innerText=m+":"+s
-
-},1000)
-
-</script>
-
-</body>
-  </html>
 function finishTest(){
 
 let correct=0
@@ -289,3 +264,25 @@ downloadAnchor.remove()
 alert("Test submitted and data downloaded!")
 
 }
+
+loadQuestion()
+buildPalette()
+
+let time=180*60
+
+setInterval(()=>{
+
+time--
+
+let m=Math.floor(time/60)
+let s=time%60
+
+document.getElementById("timer").innerText=m+":"+s
+
+},1000)
+
+</script>
+
+</body>
+
+</html>
